@@ -66,7 +66,6 @@ Configuration file defining all threat intelligence sources. Each feed is an ind
     {
         "name": "feodotracker",
         "url": "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
-        "category": "malware_botnet",
         "description": "Feodo Tracker - Botnet C&C",
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
@@ -81,7 +80,6 @@ Configuration file defining all threat intelligence sources. Each feed is an ind
 
 - `name`: Unique identifier for the feed
 - `url`: Download URL for the threat list
-- `category`: Classification (malware_botnet, spam, anonymizer, etc.)
 - `description`: Human-readable description
 - `regex`: Pattern to extract IPs/CIDRs from feed content
 - `base_score`: Threat severity (0.0-1.0)
