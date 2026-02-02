@@ -1,0 +1,58 @@
+name: Update Feeds
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Download IP2Proxy database
+        env:
+          TOKEN: ${{ secrets.IP2LOCATION_TOKEN }}
+        run: |
+          curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=PX10LITEBIN" -o database.zip
+          unzip -o database.zip "*.BIN"
+
+      - name: Build and run processor
+        run: |
+          cargo build --release
+          cargo run --release
+
+      - name: Download and process feeds
+        run: python aggregator.py
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git diff --quiet && git diff --staged --quiet || \
+            (git commit -m "Update data.json [skip ci]" && git push)
