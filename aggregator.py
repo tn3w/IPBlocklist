@@ -55,40 +55,67 @@ def parse_line(line, regex):
 
 
 def download_source(url, timeout=30):
-    try:
-        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urllib.request.urlopen(request, timeout=timeout) as response:
-            content = response.read().decode("utf-8", errors="ignore")
-            return content.splitlines()
-    except Exception as error:
-        print(f"Error downloading {url}: {error}")
-        return []
+    for attempt in range(1, 4):
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(request, timeout=timeout) as response:
+                content = response.read().decode("utf-8", errors="ignore")
+                return content.splitlines()
+        except Exception as error:
+            print(f"Error downloading {url} (attempt {attempt}/3): {error}")
+            if attempt < 3:
+                time.sleep(1)
+    return []
 
 
 def get_asn_ranges(asn):
     url = f"https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS{asn}"
-    try:
-        with urllib.request.urlopen(url, timeout=20) as response:
-            data = json.loads(response.read().decode("utf-8"))
-            if data.get("status") == "ok":
-                return [prefix["prefix"] for prefix in data["data"]["prefixes"]]
-    except Exception as error:
-        print(f"Error fetching ASN {asn}: {error}")
+    for attempt in range(1, 4):
+        try:
+            with urllib.request.urlopen(url, timeout=30) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                if data.get("status") == "ok":
+                    return [prefix["prefix"] for prefix in data["data"]["prefixes"]]
+        except Exception as error:
+            print(f"Error fetching ASN {asn} (attempt {attempt}/3): {error}")
+            if attempt < 3:
+                time.sleep(1)
     return []
 
 
 def download_single_list(source):
     ips = []
+    asns_list = []
 
     if source["name"] == "datacenter_asns":
         for line in download_source(source["url"]):
             asns = parse_line(line, source["regex"])
             for asn in asns:
                 if asn and asn.isdigit():
-                    ranges = get_asn_ranges(asn)
+                    asns_list.append(asn)
+
+        print(f"Found {len(asns_list)} datacenter ASNs")
+
+        with open("datacenter_asns.json", "w") as f:
+            json.dump(asns_list, f)
+        print(f"Saved datacenter_asns.json with {len(asns_list)} ASNs")
+
+        with ThreadPoolExecutor(max_workers=20) as executor:
+            future_to_asn = {
+                executor.submit(get_asn_ranges, asn): asn for asn in asns_list
+            }
+            for i, future in enumerate(as_completed(future_to_asn), 1):
+                asn = future_to_asn[future]
+                try:
+                    ranges = future.result()
                     ips.extend(ranges)
-                    if ranges:
-                        print(f"ASN {asn}: {len(ranges)} ranges")
+                    if i % 10 == 0 or i == len(asns_list):
+                        print(
+                            f"Progress: {i}/{len(asns_list)} ASNs processed ({i/len(asns_list)*100:.1f}%)"
+                        )
+                except Exception as e:
+                    print(f"Error processing ASN {asn}: {e}")
+
         return source["name"], ips
 
     if source["name"] == "tor_onionoo":
