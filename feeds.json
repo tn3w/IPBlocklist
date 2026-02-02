@@ -6,15 +6,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "urlhaus",
@@ -23,12 +16,8 @@
         "regex": "https?://([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})",
         "base_score": 0.9,
         "confidence": 0.95,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "dshield",
@@ -37,12 +26,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "blocklist_ssh",
@@ -51,12 +36,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.85,
-        "flags": [
-            "is_brute_force"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_brute_force"],
+        "categories": ["attacks"]
     },
     {
         "name": "blocklist_mail",
@@ -65,12 +46,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.85,
-        "flags": [
-            "is_brute_force"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_brute_force"],
+        "categories": ["attacks"]
     },
     {
         "name": "blocklist_apache",
@@ -79,12 +56,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.85,
-        "flags": [
-            "is_web_attacker"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_web_attacker"],
+        "categories": ["attacks"]
     },
     {
         "name": "emerging_compromised",
@@ -93,12 +66,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.8,
         "confidence": 0.9,
-        "flags": [
-            "is_compromised"
-        ],
-        "categories": [
-            "compromised"
-        ]
+        "flags": ["is_compromised"],
+        "categories": ["compromised"]
     },
     {
         "name": "tor_exits",
@@ -107,12 +76,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.55,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "tor_onionoo",
@@ -121,12 +86,8 @@
         "regex": "\"(?:exit_addresses|or_addresses)\":\\[\"([0-9a-fA-F:.]+):[0-9]+\"|\"(?:exit_addresses|or_addresses)\":\\[\"\\[([0-9a-fA-F:]+)\\]:[0-9]+\"",
         "base_score": 0.38,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "firehol_level1",
@@ -135,12 +96,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "firehol_level2",
@@ -149,12 +106,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "firehol_datacenters",
@@ -163,12 +116,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "firehol_anonymous",
@@ -177,12 +126,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.8,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "firehol_webclient",
@@ -191,12 +136,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_web_attacker"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_web_attacker"],
+        "categories": ["attacks"]
     },
     {
         "name": "firehol_abusers_1d",
@@ -205,12 +146,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "bruteforceblocker",
@@ -219,12 +156,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.85,
-        "flags": [
-            "is_brute_force"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_brute_force"],
+        "categories": ["attacks"]
     },
     {
         "name": "greensnow",
@@ -233,12 +166,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.7,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "spamhaus_drop",
@@ -247,12 +176,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.95,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "spamhaus_dropv6",
@@ -261,12 +186,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.95,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "binarydefense",
@@ -275,12 +196,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.8,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "cinsscore",
@@ -289,12 +206,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.8,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "ipsum",
@@ -303,12 +216,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+)\\t([3-9]|\\d{2,})",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "botvrij",
@@ -317,15 +226,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "alienvault_reputation",
@@ -334,12 +236,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "stopforumspam_toxic",
@@ -348,13 +246,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.8,
-        "flags": [
-            "is_spammer",
-            "is_forum_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer", "is_forum_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "awesome_proxies",
@@ -363,12 +256,8 @@
         "regex": "^(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "blocklist_all",
@@ -377,12 +266,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "blocklist_strongips",
@@ -391,12 +276,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "blocklist_bruteforce",
@@ -405,12 +286,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.85,
-        "flags": [
-            "is_brute_force"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_brute_force"],
+        "categories": ["attacks"]
     },
     {
         "name": "firehol_level4",
@@ -419,12 +296,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "firehol_proxies",
@@ -433,12 +306,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.8,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "firehol_webserver",
@@ -447,12 +316,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_web_attacker"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_web_attacker"],
+        "categories": ["attacks"]
     },
     {
         "name": "ciarmy",
@@ -461,12 +326,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.8,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "etnetera_aggressive",
@@ -475,12 +336,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "packetmail",
@@ -489,12 +346,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "pushing_inertia",
@@ -503,12 +356,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "sblam",
@@ -517,12 +366,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.75,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "snort_ipfilter",
@@ -531,12 +376,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "turris_greylist",
@@ -545,12 +386,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.8,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "voipbl",
@@ -559,12 +396,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.8,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "cybercrime",
@@ -573,15 +406,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "malwaredomainlist",
@@ -590,12 +416,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "php_commenters",
@@ -604,12 +426,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.7,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "php_harvesters",
@@ -618,12 +436,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "php_spammers",
@@ -632,12 +446,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "nordvpn",
@@ -647,12 +457,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "NordVPN",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "protonvpn",
@@ -662,12 +468,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "ProtonVPN",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "expressvpn",
@@ -677,12 +479,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "ExpressVPN",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "surfshark",
@@ -692,12 +490,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "Surfshark",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "pia",
@@ -707,12 +501,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "Private Internet Access",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "tunnelbear",
@@ -722,12 +512,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "TunnelBear",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "mullvad",
@@ -737,12 +523,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "Mullvad",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "cleantalk",
@@ -751,12 +533,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.65,
         "confidence": 0.8,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "cleantalk_top20",
@@ -765,12 +543,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "cruzit_web_attacks",
@@ -779,12 +553,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_web_attacker"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_web_attacker"],
+        "categories": ["attacks"]
     },
     {
         "name": "dm_tor",
@@ -793,12 +563,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.38,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "dyndns_ponmocup",
@@ -807,15 +573,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "et_block",
@@ -824,12 +583,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "et_botcc",
@@ -838,15 +593,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.92,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "et_compromised",
@@ -855,12 +603,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.9,
-        "flags": [
-            "is_compromised"
-        ],
-        "categories": [
-            "compromised"
-        ]
+        "flags": ["is_compromised"],
+        "categories": ["compromised"]
     },
     {
         "name": "et_dshield",
@@ -869,12 +613,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.8,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "et_spamhaus",
@@ -883,12 +623,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "et_tor",
@@ -897,12 +633,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.38,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "gpf_comics",
@@ -911,12 +643,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.6,
         "confidence": 0.75,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "hphosts_ats",
@@ -935,12 +663,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "hphosts_exp",
@@ -949,12 +673,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "hphosts_fsa",
@@ -963,12 +683,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.85,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "hphosts_psh",
@@ -977,12 +693,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.9,
         "confidence": 0.9,
-        "flags": [
-            "is_phishing"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_phishing"],
+        "categories": ["malware"]
     },
     {
         "name": "iblocklist_abuse_palevo",
@@ -991,15 +703,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "iblocklist_abuse_spyeye",
@@ -1008,15 +713,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "iblocklist_abuse_zeus",
@@ -1025,15 +723,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "iblocklist_onion_router",
@@ -1042,12 +733,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.38,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "iblocklist_spamhaus_drop",
@@ -1056,12 +743,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.85,
         "confidence": 0.95,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "nixspam",
@@ -1070,12 +753,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.7,
         "confidence": 0.8,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "ri_connect_proxies",
@@ -1084,12 +763,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ri_web_proxies",
@@ -1098,12 +773,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "socks_proxy",
@@ -1112,12 +783,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "sslproxies",
@@ -1126,12 +793,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "x4bnet_vpn_all",
@@ -1140,12 +803,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.85,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "x4bnet_datacenter_ipv4",
@@ -1154,12 +813,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.9,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "datacenter_asns",
@@ -1168,12 +823,8 @@
         "regex": "^(?![#;/ASN])([0-9]+)",
         "base_score": 0.35,
         "confidence": 0.85,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "globules_vpn_ipv4",
@@ -1182,12 +833,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.85,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "globules_vpn_ipv6",
@@ -1196,12 +843,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.85,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "jhassine_datacenter_ipv4",
@@ -1210,12 +853,8 @@
         "regex": "\"([0-9.]+/\\d+)\"",
         "base_score": 0.35,
         "confidence": 0.9,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "jetkai_proxy_http",
@@ -1224,12 +863,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "jetkai_proxy_https",
@@ -1238,12 +873,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "jetkai_proxy_socks4",
@@ -1252,12 +883,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "jetkai_proxy_socks5",
@@ -1266,12 +893,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "thespeedx_proxy_http",
@@ -1280,12 +903,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "thespeedx_proxy_socks4",
@@ -1294,12 +913,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "thespeedx_proxy_socks5",
@@ -1308,12 +923,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "monosans_proxy_http",
@@ -1322,12 +933,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "monosans_proxy_socks4",
@@ -1336,12 +943,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "monosans_proxy_socks5",
@@ -1350,12 +953,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "proxifly_http",
@@ -1364,12 +963,8 @@
         "regex": "://([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "hookzof_socks5",
@@ -1378,12 +973,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "vakhov_http",
@@ -1392,12 +983,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "vakhov_https",
@@ -1406,12 +993,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "vakhov_socks4",
@@ -1420,12 +1003,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "vakhov_socks5",
@@ -1434,12 +1013,8 @@
         "regex": "^([0-9.]+):",
         "base_score": 0.4,
         "confidence": 0.75,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "cloudflare_ipv4",
@@ -1448,13 +1023,8 @@
         "regex": "^([0-9.]+/\\d+)",
         "base_score": 0.35,
         "confidence": 1.0,
-        "flags": [
-            "is_datacenter",
-            "is_cdn"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cdn"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "cloudflare_ipv6",
@@ -1463,13 +1033,8 @@
         "regex": "^([0-9a-fA-F:]+/\\d+)",
         "base_score": 0.35,
         "confidence": 1.0,
-        "flags": [
-            "is_datacenter",
-            "is_cdn"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cdn"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "aws_ipv4",
@@ -1478,13 +1043,8 @@
         "regex": "\"ip_prefix\":\\s*\"([0-9.]+/\\d+)\"",
         "base_score": 0.35,
         "confidence": 1.0,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "gcp_ipv4",
@@ -1493,13 +1053,8 @@
         "regex": "\"ipv4Prefix\":\\s*\"([0-9.]+/\\d+)\"",
         "base_score": 0.35,
         "confidence": 1.0,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "digitalocean_ipv4",
@@ -1508,13 +1063,8 @@
         "regex": "^([0-9.]+/\\d+)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "c2tracker_all",
@@ -1523,15 +1073,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "curbengh_botnet",
@@ -1540,15 +1083,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "stamparm_ipsum_level1",
@@ -1557,12 +1093,8 @@
         "regex": "^([0-9a-fA-F:.]+)",
         "base_score": 0.9,
         "confidence": 0.95,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "stamparm_ipsum_level2",
@@ -1571,12 +1103,8 @@
         "regex": "^([0-9a-fA-F:.]+)",
         "base_score": 0.8,
         "confidence": 0.9,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "stamparm_ipsum_level3",
@@ -1585,12 +1113,8 @@
         "regex": "^([0-9a-fA-F:.]+)",
         "base_score": 0.7,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "projecthoneypot_http_bl",
@@ -1599,12 +1123,8 @@
         "regex": "<title>([0-9.]+)</title>",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "threatview_c2",
@@ -1613,15 +1133,8 @@
         "regex": "^(?![#;/])([0-9.]+)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "threatfox_ioc_ips",
@@ -1630,12 +1143,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "hagezi_threat_intelligence",
@@ -1644,12 +1153,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+)",
         "base_score": 0.85,
         "confidence": 0.9,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "linode_ipv4",
@@ -1658,13 +1163,8 @@
         "regex": "^([0-9.]+/\\d+)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "oracle_cloud_ipv4",
@@ -1673,13 +1173,8 @@
         "regex": "\"cidr\":\\s*\"([0-9.]+/\\d+)\"",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "akamai_ipv4",
@@ -1688,13 +1183,8 @@
         "regex": "^([0-9.]+/\\d+)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cdn"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cdn"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "fastly_ipv4",
@@ -1703,13 +1193,8 @@
         "regex": "\"([0-9.]+/\\d+)\"",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cdn"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cdn"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "vultr_ipv4",
@@ -1718,13 +1203,8 @@
         "regex": "^([0-9.]+/\\d+)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter",
-            "is_cloud"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter", "is_cloud"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "youngjun_chang_vpn_ipv4",
@@ -1733,12 +1213,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.85,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "youngjun_chang_vpn_ipv6",
@@ -1747,12 +1223,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:]+(?:/\\d+)?)",
         "base_score": 0.5,
         "confidence": 0.85,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "pia_ranges",
@@ -1762,12 +1234,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "Private Internet Access",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "cyberghost_proxies",
@@ -1777,12 +1245,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "CyberGhost",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "threatfox_ioc",
@@ -1791,12 +1255,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 1.0,
         "confidence": 0.95,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "astrill_vpn",
@@ -1806,12 +1266,8 @@
         "base_score": 0.5,
         "confidence": 1.0,
         "provider_name": "Astrill",
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "anycast_ipv4_prefixes",
@@ -1820,12 +1276,8 @@
         "regex": "^(?![#;/])([0-9.]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_anycast"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_anycast"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "anycast_ipv6_prefixes",
@@ -1834,12 +1286,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_anycast"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_anycast"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_vpn",
@@ -1848,12 +1296,8 @@
         "regex": "",
         "base_score": 0.5,
         "confidence": 0.95,
-        "flags": [
-            "is_vpn"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_vpn"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ip2proxy_tor",
@@ -1862,12 +1306,8 @@
         "regex": "",
         "base_score": 0.38,
         "confidence": 1.0,
-        "flags": [
-            "is_tor", "is_anonymizer"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_tor", "is_anonymizer"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ip2proxy_pub",
@@ -1876,12 +1316,8 @@
         "regex": "",
         "base_score": 0.5,
         "confidence": 0.9,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ip2proxy_web",
@@ -1890,12 +1326,8 @@
         "regex": "",
         "base_score": 0.5,
         "confidence": 0.9,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ip2proxy_res",
@@ -1904,12 +1336,8 @@
         "regex": "",
         "base_score": 0.55,
         "confidence": 0.85,
-        "flags": [
-            "is_proxy"
-        ],
-        "categories": [
-            "anonymizer"
-        ]
+        "flags": ["is_proxy"],
+        "categories": ["anonymizer"]
     },
     {
         "name": "ip2proxy_dch",
@@ -1918,12 +1346,8 @@
         "regex": "",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_com",
@@ -1932,12 +1356,8 @@
         "regex": "",
         "base_score": 0.3,
         "confidence": 0.8,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_edu",
@@ -1946,12 +1366,8 @@
         "regex": "",
         "base_score": 0.2,
         "confidence": 0.9,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_gov",
@@ -1960,12 +1376,8 @@
         "regex": "",
         "base_score": 0.2,
         "confidence": 0.9,
-        "flags": [
-            "is_datacenter"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_isp",
@@ -1974,12 +1386,8 @@
         "regex": "",
         "base_score": 0.25,
         "confidence": 0.85,
-        "flags": [
-            "is_isp"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_isp"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_mob",
@@ -1988,12 +1396,8 @@
         "regex": "",
         "base_score": 0.3,
         "confidence": 0.85,
-        "flags": [
-            "is_mobile"
-        ],
-        "categories": [
-            "infrastructure"
-        ]
+        "flags": ["is_mobile"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "ip2proxy_spam",
@@ -2002,12 +1406,8 @@
         "regex": "",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_spammer"
-        ],
-        "categories": [
-            "spam"
-        ]
+        "flags": ["is_spammer"],
+        "categories": ["spam"]
     },
     {
         "name": "ip2proxy_scanner",
@@ -2016,12 +1416,8 @@
         "regex": "",
         "base_score": 0.75,
         "confidence": 0.85,
-        "flags": [
-            "is_scanner"
-        ],
-        "categories": [
-            "attacks"
-        ]
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "ip2proxy_botnet",
@@ -2030,15 +1426,8 @@
         "regex": "",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware",
-            "is_botnet",
-            "is_c2_server"
-        ],
-        "categories": [
-            "malware",
-            "botnet"
-        ]
+        "flags": ["is_malware", "is_botnet", "is_c2_server"],
+        "categories": ["malware", "botnet"]
     },
     {
         "name": "ip2proxy_malware",
@@ -2047,12 +1436,8 @@
         "regex": "",
         "base_score": 0.92,
         "confidence": 0.9,
-        "flags": [
-            "is_malware"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_malware"],
+        "categories": ["malware"]
     },
     {
         "name": "ip2proxy_phishing",
@@ -2061,11 +1446,7 @@
         "regex": "",
         "base_score": 0.9,
         "confidence": 0.9,
-        "flags": [
-            "is_phishing"
-        ],
-        "categories": [
-            "malware"
-        ]
+        "flags": ["is_phishing"],
+        "categories": ["malware"]
     }
 ]

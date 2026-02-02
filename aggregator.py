@@ -199,7 +199,7 @@ def load_ip2proxy_data():
     try:
         with open("data-ip2proxy.json") as file:
             data = json.load(file)
-            return data.get("lists", {})
+            return data.get("feeds", {})
     except FileNotFoundError:
         print("Warning: data-ip2proxy.json not found")
         return {}

@@ -30,13 +30,28 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 ## 📊 Architecture
 
 ```
-feeds.json → aggregator.py → data.json
-  (config)    (processor)     (binary)
+IP2PROXY-LITE-PX10.BIN → main.rs → data-ip2proxy.json
+     (database)         (extractor)         |
+                                            |
+feeds.json ───────────────────────────────> |
+  (config)                                  ↓
+                                       aggregator.py
+                                        (processor)
+                                            ↓
+                                        data.json
+                                         (binary)
 ```
 
 ## 📖 Overview
 
 IPBlocklist downloads threat intelligence from multiple sources (malware C&C servers, botnets, spam networks, VPN providers, Tor nodes, etc.) and converts them into a compact, searchable format. IP addresses are stored as integers and CIDR ranges as [start, end] pairs for efficient binary search lookups.
+
+The system uses two data sources:
+
+1. **Public Threat Feeds**: 128+ open-source security feeds (configured in feeds.json)
+2. **IP2Proxy Database**: Commercial proxy/VPN/threat detection database processed by the Rust extractor
+
+Both sources are merged by aggregator.py into a unified data.json file.
 
 ## 📁 Data Models
 
@@ -116,9 +131,51 @@ Processed output with all IPs converted to integers for fast lookups.
 - IPv6: `2001:db8::1` → `42540766411282592856903984951653826561`
 - CIDR: `10.0.0.0/27` → `[167772160, 167772191]` (network to broadcast)
 
+## 🦀 main.rs (Rust Extractor)
+
+High-performance binary parser for IP2Proxy LITE PX10 database files. Extracts and categorizes proxy/VPN/threat IPs into separate feeds.
+
+**Features**:
+
+- Memory-mapped file I/O for efficient database access
+- Parallel processing with Rayon (10K record chunks)
+- Extracts 16 categories: VPN, TOR, PUB, WEB, RES, DCH, COM, EDU, GOV, ISP, MOB, SPAM, SCANNER, BOTNET, MALWARE, PHISHING
+- Deduplication using HashSet per category
+- Outputs to `data-ip2proxy.json` in the same format as aggregator.py
+
+**Categories**:
+
+The extractor reads the IP2Proxy database fields (proxy type, usage type, threat type) and maps them to feeds:
+
+- `ip2proxy_vpn`: VPN providers
+- `ip2proxy_tor`: Tor exit nodes
+- `ip2proxy_pub`: Public proxies
+- `ip2proxy_web`: Web proxies
+- `ip2proxy_res`: Residential proxies
+- `ip2proxy_dch`: Datacenter/hosting
+- `ip2proxy_com`: Commercial networks
+- `ip2proxy_edu`: Educational institutions
+- `ip2proxy_gov`: Government networks
+- `ip2proxy_isp`: ISP networks
+- `ip2proxy_mob`: Mobile networks
+- `ip2proxy_spam`: Known spammers
+- `ip2proxy_scanner`: Port scanners
+- `ip2proxy_botnet`: Botnet nodes
+- `ip2proxy_malware`: Malware hosts
+- `ip2proxy_phishing`: Phishing sites
+
+**Usage**:
+
+```bash
+cargo build --release
+cargo run --release
+```
+
+**Output**: Creates `data-ip2proxy.json` with categorized IP ranges
+
 ## ⚙️ aggregator.py
 
-Downloads and processes all feeds in parallel, handling multiple formats and edge cases.
+Downloads and processes all feeds in parallel, handling multiple formats and edge cases. Merges public threat feeds with IP2Proxy data.
 
 **Features**:
 
@@ -128,6 +185,7 @@ Downloads and processes all feeds in parallel, handling multiple formats and edg
 - ASN resolution for datacenter and Tor networks
 - Deduplication and sorting for binary search
 - Regex-based parsing for diverse feed formats
+- Loads and merges IP2Proxy data from `data-ip2proxy.json`
 
 **Special Handling**:
 
@@ -135,14 +193,19 @@ Downloads and processes all feeds in parallel, handling multiple formats and edg
 - `tor_onionoo`: Combines Tor relay list with known Tor ASNs
 - IPv6 mapped addresses: Extracts embedded IPv4 (::ffff:192.0.2.1)
 - 6to4 tunnels: Extracts IPv4 from 2002::/16 addresses
+- IP2Proxy integration: Loads categorized data and converts to integer format
 
 **Usage**:
 
 ```bash
+# Run Rust extractor first (if using IP2Proxy)
+cargo run --release
+
+# Then run Python aggregator
 python aggregator.py
 ```
 
-**Output**: Creates/updates `data.json` with all processed lists
+**Output**: Creates/updates `data.json` with all processed lists (public feeds + IP2Proxy)
 
 ## 🐍 Python Lookup Examples
 
@@ -351,6 +414,10 @@ print(json.dumps(result, indent=2))
 - **Security Analytics**: Enrich logs with threat intelligence
 - **Access Control**: Restrict Tor exit nodes or anonymizers
 - **Compliance**: Block traffic from sanctioned networks
+
+## 🙏 Attribution
+
+IPBlocklist uses the IP2Location LITE database for <a href="https://lite.ip2location.com">IP geolocation</a>.
 
 ## 📜 License
 
