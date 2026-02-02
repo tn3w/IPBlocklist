@@ -48,7 +48,7 @@ IPBlocklist downloads threat intelligence from multiple sources (malware C&C ser
 
 The system uses two data sources:
 
-1. **Public Threat Feeds**: 112+ open-source security feeds (configured in feeds.json)
+1. **Public Threat Feeds**: 128+ open-source security feeds (configured in feeds.json)
 2. **IP2Proxy Database**: Commercial proxy/VPN/threat detection database processed by the Rust extractor
 
 Both sources are merged by aggregator.py into a unified data.json file.
@@ -398,8 +398,8 @@ print(json.dumps(result, indent=2))
 
 **Lookup Complexity**:
 
-- Individual IPs: O(log n) with binary search
-- CIDR ranges: O(m) where m = number of ranges per list
+- Individual IPs: 4.2M (4.2M IPv4, 685 IPv6)
+- CIDR ranges: 4511K (4493K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 144 feeds with 8.7M entries
 
 **Memory Usage**:
