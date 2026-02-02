@@ -49,10 +49,129 @@ jobs:
       - name: Download and process feeds
         run: python aggregator.py
 
+      - name: Update README with stats
+        run: |
+          python3 << 'EOF'
+          import json
+          import os
+          import re
+
+          file_size_mb = os.path.getsize("data.json") / (1024 * 1024)
+
+          with open("data.json", 'r') as f:
+              data = json.load(f)
+
+          num_feeds = len(data["feeds"])
+
+          total_ipv4_addresses = 0
+          total_ipv6_addresses = 0
+          total_ipv4_ranges = 0
+          total_ipv6_ranges = 0
+          IPV4_MAX = 4294967295
+
+          for list_data in data["feeds"].values():
+              for addr in list_data.get("addresses", []):
+                  if addr <= IPV4_MAX:
+                      total_ipv4_addresses += 1
+                  else:
+                      total_ipv6_addresses += 1
+              
+              for start, end in list_data.get("networks", []):
+                  if end <= IPV4_MAX:
+                      total_ipv4_ranges += 1
+                  else:
+                      total_ipv6_ranges += 1
+
+          total_addresses = total_ipv4_addresses + total_ipv6_addresses
+          total_ranges = total_ipv4_ranges + total_ipv6_ranges
+          total_entries = total_addresses + total_ranges
+
+          with open("feeds.json", 'r') as f:
+              feeds_config = json.load(f)
+          public_feeds = sum(1 for feed in feeds_config if not feed["name"].startswith("ip2proxy_"))
+
+          with open("README.md", 'r') as f:
+              readme = f.read()
+
+          readme = re.sub(
+              r'badge/dataset-[^-]+-blue',
+              f'badge/dataset-{total_entries/1_000_000:.1f}M_entries-blue',
+              readme
+          )
+          readme = re.sub(
+              r'badge/IPs-[^-]+-green',
+              f'badge/IPs-{total_addresses/1_000_000:.1f}M-green',
+              readme
+          )
+          readme = re.sub(
+              r'badge/ranges-[^-]+-orange',
+              f'badge/ranges-{total_ranges/1_000:.0f}K-orange',
+              readme
+          )
+          readme = re.sub(
+              r'data\.json_\([^)]+\)',
+              f'data.json_({file_size_mb:.1f}MB)',
+              readme
+          )
+
+          readme = re.sub(
+              r'- ✅ Fast IP lookups.*\n- ✅ [0-9.]+M\+ IPs and CIDR ranges from \d+ threat intelligence feeds',
+              f'- ✅ Fast IP lookups in <1ms using binary search\n- ✅ {total_entries/1_000_000:.1f}M+ IPs and CIDR ranges from {num_feeds} threat intelligence feeds',
+              readme
+          )
+
+          readme = re.sub(
+              r'\*\*Public Threat Feeds\*\*: \d+\+ open-source security feeds',
+              f'**Public Threat Feeds**: {public_feeds}+ open-source security feeds',
+              readme
+          )
+
+          readme = re.sub(
+              r'- Total feeds: \d+',
+              f'- Total feeds: {num_feeds}',
+              readme
+          )
+          readme = re.sub(
+              r'- Individual IPs: [^\n]+',
+              f'- Individual IPs: {total_addresses/1_000_000:.1f}M ({total_ipv4_addresses/1_000_000:.1f}M IPv4, {total_ipv6_addresses:,} IPv6)',
+              readme
+          )
+          readme = re.sub(
+              r'- CIDR ranges: [^\n]+',
+              f'- CIDR ranges: {total_ranges/1_000:.0f}K ({total_ipv4_ranges/1_000:.0f}K IPv4, {total_ipv6_ranges/1_000:.0f}K IPv6)',
+              readme
+          )
+          readme = re.sub(
+              r'- Total entries: [^\n]+',
+              f'- Total entries: {total_entries/1_000_000:.1f}M',
+              readme
+          )
+          readme = re.sub(
+              r'- File size: [^\n]+',
+              f'- File size: {file_size_mb:.1f}MB',
+              readme
+          )
+          readme = re.sub(
+              r'- Typical lookup: <1ms for \d+ feeds with [^\n]+',
+              f'- Typical lookup: <1ms for {num_feeds} feeds with {total_entries/1_000_000:.1f}M entries',
+              readme
+          )
+
+          with open("README.md", 'w') as f:
+              f.write(readme)
+
+          print(f"Updated README.md with stats:")
+          print(f"  File size: {file_size_mb:.1f}MB")
+          print(f"  Feeds: {num_feeds} ({public_feeds} public)")
+          print(f"  IPs: {total_addresses/1_000_000:.1f}M")
+          print(f"  Ranges: {total_ranges/1_000:.0f}K")
+          print(f"  Total: {total_entries/1_000_000:.1f}M")
+          EOF
+
       - name: Commit and push if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json
+          git add data.json README.md
           git diff --quiet && git diff --staged --quiet || \
-            (git commit -m "Update data.json [skip ci]" && git push)
+            (git commit -m "Update data.json and README stats [skip ci]" && git push)

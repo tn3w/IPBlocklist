@@ -6,13 +6,13 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/dataset-4.9M_entries-blue?style=for-the-badge" alt="Dataset Size">
+<img src="https://img.shields.io/badge/dataset-8.7M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.2M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-668K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-4511K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(58.7MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(145.7MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
 </p>
 
 </div>
@@ -20,7 +20,7 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 ## 🚀 Key Features
 
 - ✅ Fast IP lookups in <1ms using binary search
-- ✅ 4.9M+ IPs and CIDR ranges from 128 threat intelligence feeds
+- ✅ 8.7M+ IPs and CIDR ranges from 144 threat intelligence feeds
 - ✅ Malware C&C servers, botnets, spam networks, compromised hosts
 - ✅ VPN providers, Tor nodes, datacenter/hosting ASNs
 - ✅ Optimized integer storage for minimal memory footprint
@@ -48,7 +48,7 @@ IPBlocklist downloads threat intelligence from multiple sources (malware C&C ser
 
 The system uses two data sources:
 
-1. **Public Threat Feeds**: 128+ open-source security feeds (configured in feeds.json)
+1. **Public Threat Feeds**: 112+ open-source security feeds (configured in feeds.json)
 2. **IP2Proxy Database**: Commercial proxy/VPN/threat detection database processed by the Rust extractor
 
 Both sources are merged by aggregator.py into a unified data.json file.
@@ -97,12 +97,12 @@ Configuration file defining all threat intelligence sources. Each feed is an ind
 
 Processed output with all IPs converted to integers for fast lookups.
 
-**Structure**: Object with timestamp and lists
+**Structure**: Object with timestamp and feeds
 
 ```json
 {
     "timestamp": 1706234567,
-    "lists": {
+    "feeds": {
         "feodotracker": {
             "addresses": [167772160, 167772161, 167772162],
             "networks": [
@@ -121,7 +121,7 @@ Processed output with all IPs converted to integers for fast lookups.
 **Fields**:
 
 - `timestamp`: Unix timestamp of last update
-- `lists`: Object where keys are feed names
+- `feeds`: Object where keys are feed names
     - `addresses`: Sorted array of individual IPs as integers
     - `networks`: Sorted array of [start, end] range pairs as integers
 
@@ -205,7 +205,7 @@ cargo run --release
 python aggregator.py
 ```
 
-**Output**: Creates/updates `data.json` with all processed lists (public feeds + IP2Proxy)
+**Output**: Creates/updates `data.json` with all processed feeds (public feeds + IP2Proxy)
 
 ## 🐍 Python Lookup Examples
 
@@ -218,11 +218,11 @@ import ipaddress
 with open("data.json") as f:
     data = json.load(f)
 
-def check_ip(ip_string, lists):
+def check_ip(ip_string, feeds):
     target = int(ipaddress.ip_address(ip_string))
     matches = []
 
-    for name, list_data in lists.items():
+    for name, list_data in feeds.items():
         if target in list_data["addresses"]:
             matches.append(name)
             continue
@@ -234,7 +234,7 @@ def check_ip(ip_string, lists):
 
     return matches
 
-result = check_ip("10.0.0.1", data["lists"])
+result = check_ip("10.0.0.1", data["feeds"])
 print(result)
 ```
 
@@ -248,11 +248,11 @@ from bisect import bisect_left
 with open("data.json") as f:
     data = json.load(f)
 
-def check_ip_fast(ip_string, lists):
+def check_ip_fast(ip_string, feeds):
     target = int(ipaddress.ip_address(ip_string))
     matches = []
 
-    for name, list_data in lists.items():
+    for name, list_data in feeds.items():
         addresses = list_data["addresses"]
         index = bisect_left(addresses, target)
         if index < len(addresses) and addresses[index] == target:
@@ -266,7 +266,7 @@ def check_ip_fast(ip_string, lists):
 
     return matches
 
-result = check_ip_fast("192.168.1.1", data["lists"])
+result = check_ip_fast("192.168.1.1", data["feeds"])
 print(result)
 ```
 
@@ -280,14 +280,14 @@ from bisect import bisect_left
 with open("data.json") as f:
     data = json.load(f)
 
-def check_batch(ip_list, lists):
+def check_batch(ip_list, feeds):
     results = {}
 
     for ip_string in ip_list:
         target = int(ipaddress.ip_address(ip_string))
         matches = []
 
-        for name, list_data in lists.items():
+        for name, list_data in feeds.items():
             addresses = list_data["addresses"]
             index = bisect_left(addresses, target)
             if index < len(addresses) and addresses[index] == target:
@@ -304,9 +304,9 @@ def check_batch(ip_list, lists):
     return results
 
 ips = ["10.0.0.1", "192.168.1.1", "8.8.8.8"]
-results = check_batch(ips, data["lists"])
-for ip, lists in results.items():
-    print(f"{ip}: {lists}")
+results = check_batch(ips, data["feeds"])
+for ip, feeds in results.items():
+    print(f"{ip}: {feeds}")
 ```
 
 ### Reputation Scoring
@@ -324,11 +324,11 @@ with open("feeds.json") as f:
 
 sources = {feed["name"]: feed for feed in feeds}
 
-def check_ip_with_reputation(ip_string, lists, sources):
+def check_ip_with_reputation(ip_string, feeds, sources):
     target = int(ipaddress.ip_address(ip_string))
     matches = []
 
-    for name, list_data in lists.items():
+    for name, list_data in feeds.items():
         addresses = list_data["addresses"]
         index = bisect_left(addresses, target)
         if index < len(addresses) and addresses[index] == target:
@@ -341,7 +341,7 @@ def check_ip_with_reputation(ip_string, lists, sources):
                 break
 
     if not matches:
-        return {"ip": ip_string, "score": 0.0, "lists": []}
+        return {"ip": ip_string, "score": 0.0, "feeds": []}
 
     flags = {}
     scores = {
@@ -378,11 +378,11 @@ def check_ip_with_reputation(ip_string, lists, sources):
     return {
         "ip": ip_string,
         "score": min(total / 1.5, 1.0),
-        "lists": matches,
+        "feeds": matches,
         **flags
     }
 
-result = check_ip_with_reputation("10.0.0.1", data["lists"], sources)
+result = check_ip_with_reputation("10.0.0.1", data["feeds"], sources)
 print(json.dumps(result, indent=2))
 ```
 
@@ -390,17 +390,17 @@ print(json.dumps(result, indent=2))
 
 **Dataset Statistics**:
 
-- Total lists: 128
-- Individual IPs: 4.2M (4.2M IPv4, 677 IPv6)
-- CIDR ranges: 668K (649K IPv4, 19K IPv6)
-- Total entries: 4.9M
-- File size: 58.7MB
+- Total feeds: 144
+- Individual IPs: 4.2M (4.2M IPv4, 685 IPv6)
+- CIDR ranges: 4511K (4493K IPv4, 19K IPv6)
+- Total entries: 8.7M
+- File size: 145.7MB
 
 **Lookup Complexity**:
 
 - Individual IPs: O(log n) with binary search
 - CIDR ranges: O(m) where m = number of ranges per list
-- Typical lookup: <1ms for 128 lists with 4.9M entries
+- Typical lookup: <1ms for 144 feeds with 8.7M entries
 
 **Memory Usage**:
 
