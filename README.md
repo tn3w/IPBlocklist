@@ -93,6 +93,10 @@ Configuration file defining all threat intelligence sources. Each feed is an ind
 
 - `provider_name`: VPN/hosting provider name
 
+**Special Cases**:
+
+IP2Proxy feeds (ip2proxy_*) have empty `regex` fields because they are not downloaded via HTTP. Instead, they are extracted from the IP2PROXY-LITE-PX10.BIN binary database by the Rust extractor (main.rs) and merged into the final dataset. These feeds include VPN, Tor, proxy, datacenter, spam, scanner, botnet, malware, and phishing detection.
+
 ### data.json
 
 Processed output with all IPs converted to integers for fast lookups.

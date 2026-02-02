@@ -1249,16 +1249,6 @@
         "categories": ["anonymizer"]
     },
     {
-        "name": "threatfox_ioc",
-        "url": "https://raw.githubusercontent.com/elliotwutingfeng/ThreatFox-IOC-IPs/main/ips.txt",
-        "description": "ThreatFox IOC IPs from abuse.ch",
-        "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
-        "base_score": 1.0,
-        "confidence": 0.95,
-        "flags": ["is_malware"],
-        "categories": ["malware"]
-    },
-    {
         "name": "astrill_vpn",
         "url": "https://storage.googleapis.com/spur-astrill-vpn/ips.txt",
         "description": "Astrill VPN IP addresses (Spur dataset)",

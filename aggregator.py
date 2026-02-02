@@ -120,46 +120,6 @@ def download_all_feeds(sources):
     return feeds
 
 
-def extract_ipv4_from_ipv6(ipv6_str):
-    try:
-        ipv6_obj = ipaddress.IPv6Address(ipv6_str)
-
-        if ipv6_obj.ipv4_mapped:
-            return [str(ipv6_obj.ipv4_mapped)]
-
-        if ipv6_str.lower().startswith("2002:"):
-            parts = ipv6_str.split(":")
-            if len(parts) >= 3:
-                hex_ip = parts[1] + parts[2]
-                if len(hex_ip) == 8:
-                    ipv4_int = int(hex_ip, 16)
-                    return [str(ipaddress.IPv4Address(ipv4_int))]
-
-        parts = ipv6_str.split(":")
-        for i, part in enumerate(parts):
-            if part and part.isdigit() and 0 <= int(part) <= 255:
-                if i + 3 < len(parts):
-                    octets = parts[i : i + 4]
-                    if all(p and p.isdigit() and 0 <= int(p) <= 255 for p in octets):
-                        return [".".join(octets)]
-    except ValueError:
-        pass
-    return []
-
-
-def compress_ipv6(ip_str):
-    try:
-        if "/" in ip_str:
-            ip_part, prefix = ip_str.split("/", 1)
-            if ":" in ip_part:
-                return str(ipaddress.IPv6Address(ip_part).compressed) + "/" + prefix
-        elif ":" in ip_str:
-            return str(ipaddress.IPv6Address(ip_str).compressed)
-    except Exception:
-        pass
-    return ip_str
-
-
 def process_feeds(feeds):
     processed = {}
     for list_name, ip_strings in feeds.items():
