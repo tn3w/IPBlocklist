@@ -33,12 +33,17 @@ jobs:
             target/
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Download IP2Proxy database
+      - name: Download and compress databases
         env:
           TOKEN: ${{ secrets.IP2LOCATION_TOKEN }}
         run: |
           curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=PX10LITEBIN" -o database.zip
           unzip -o database.zip "*.BIN"
+          curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=DB9LITEBINIPV6" -o location.zip
+          unzip -o location.zip "*.BIN"
+          xz -k IP2LOCATION-LITE-DB9.IPV6.BIN
+          mv IP2LOCATION-LITE-DB9.IPV6.BIN.xz location.xz
+          ls -lh location.xz
 
       - name: Build and run processor
         run: |
@@ -50,7 +55,7 @@ jobs:
 
       - name: Compress data.json
         run: |
-          xz -3 -k data.json
+          xz -k data.json
           ls -lh data.json.xz
 
       - name: Update README with stats
@@ -62,6 +67,7 @@ jobs:
 
           file_size_mb = os.path.getsize("data.json") / (1024 * 1024)
           compressed_size_mb = os.path.getsize("data.json.xz") / (1024 * 1024)
+          location_size_mb = os.path.getsize("location.xz") / (1024 * 1024)
 
           with open("data.json", 'r') as f:
               data = json.load(f)
@@ -119,6 +125,11 @@ jobs:
               readme
           )
           readme = re.sub(
+              r'location\.xz_\([^)]+\)',
+              f'location.xz_({location_size_mb:.0f}MB)',
+              readme
+          )
+          readme = re.sub(
               r'\d+MB file \(from \d+MB uncompressed\)',
               f'{compressed_size_mb:.0f}MB file (from {file_size_mb:.0f}MB uncompressed)',
               readme
@@ -173,6 +184,7 @@ jobs:
           print(f"Updated README.md with stats:")
           print(f"  File size: {file_size_mb:.1f}MB (uncompressed)")
           print(f"  Compressed: {compressed_size_mb:.0f}MB")
+          print(f"  Location DB: {location_size_mb:.0f}MB")
           print(f"  Feeds: {num_feeds} ({public_feeds} public)")
           print(f"  IPs: {total_addresses/1_000_000:.1f}M")
           print(f"  Ranges: {total_ranges/1_000:.0f}K")
@@ -183,6 +195,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json.xz datacenter_asns.json README.md
+          git add data.json.xz datacenter_asns.json location.xz README.md
           git diff --quiet && git diff --staged --quiet || \
             (git commit -m "Update compressed data and README stats [skip ci]" && git push)

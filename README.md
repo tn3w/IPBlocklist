@@ -12,16 +12,19 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(21MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(21MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz"><img src="https://img.shields.io/badge/download-location.xz_(0MB)-blue?style=for-the-badge&logo=download&logoColor=white" alt="Download Location DB"></a>
 </p>
 
 </div>
 
 ## 📥 Download & Extract
 
-The dataset is compressed with xz and available as a single 21MB file (from 148MB uncompressed).
+The datasets are compressed with xz and available as downloadable files.
 
-### Download and Decompress
+### Threat Intelligence Data
+
+The threat intelligence dataset is a 21MB file (from 148MB uncompressed).
 
 ```bash
 # Download the compressed file
@@ -34,10 +37,27 @@ xz -d data.json.xz
 ls -lh data.json
 ```
 
-### One-Liner
+### IP2Location Geolocation Database
+
+The IP2Location LITE DB9 database includes country, region, city, latitude, longitude, and ZIP code data for both IPv4 and IPv6.
 
 ```bash
-wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz && xz -d data.json.xz
+# Download the compressed database
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz
+
+# Decompress to get the binary database
+xz -d location.xz
+
+# Verify the file
+ls -lh location.bin
+```
+
+### Download Both (One-Liner)
+
+```bash
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz && \
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz && \
+xz -d data.json.xz location.xz
 ```
 
 ## 🚀 Key Features
