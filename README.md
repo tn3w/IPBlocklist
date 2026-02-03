@@ -12,10 +12,43 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(147.6MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://github.com/tn3w/IPBlocklist/tree/master"><img src="https://img.shields.io/badge/download-compressed_splits-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
 </p>
 
 </div>
+
+## 📥 Download & Extract
+
+The dataset is compressed with xz (maximum compression) and split into files under 95MB each for easier distribution.
+
+### Download All Split Files
+
+```bash
+# Download all split files from GitHub
+for i in {00..99}; do
+  wget -q "https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz.$i.xz" 2>/dev/null && echo "Downloaded part $i" || break
+done
+```
+
+### Reconstruct and Decompress
+
+```bash
+# Combine all split files back into one compressed file
+cat data.json.xz.*.xz > data.json.xz
+
+# Decompress to get the original data.json
+xz -d data.json.xz
+
+# Verify the file
+ls -lh data.json
+```
+
+### One-Liner Download & Extract
+
+```bash
+# Download, combine, and decompress in one command
+for i in {00..99}; do wget -q "https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz.$i.xz" 2>/dev/null || break; done && cat data.json.xz.*.xz > data.json.xz && xz -d data.json.xz && rm data.json.xz.*.xz
+```
 
 ## 🚀 Key Features
 
