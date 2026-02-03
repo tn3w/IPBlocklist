@@ -172,6 +172,6 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data.json README.md
+          git add data.json datacenter_asns.json README.md
           git diff --quiet && git diff --staged --quiet || \
-            (git commit -m "Update data.json and README stats [skip ci]" && git push)
+            (git commit -m "Update data and README stats [skip ci]" && git push)
