@@ -8,11 +8,11 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
 <img src="https://img.shields.io/badge/dataset-8.8M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.2M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4574K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-4571K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(146.9MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(147.3MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
 </p>
 
 </div>
@@ -431,15 +431,15 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.2M (4.2M IPv4, 719 IPv6)
-- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Individual IPs: 4.2M (4.2M IPv4, 740 IPv6)
+- CIDR ranges: 4571K (4553K IPv4, 19K IPv6)
 - Total entries: 8.8M
-- File size: 146.9MB
+- File size: 147.3MB
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.2M (4.2M IPv4, 719 IPv6)
-- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Individual IPs: 4.2M (4.2M IPv4, 740 IPv6)
+- CIDR ranges: 4571K (4553K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 143 feeds with 8.8M entries
 
 **Memory Usage**:
