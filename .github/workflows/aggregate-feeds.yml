@@ -195,6 +195,9 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git rm --cached --ignore-unmatch data.json.xz location.xz 2>/dev/null || true
+
           git add data.json.xz datacenter_asns.json location.xz README.md
           git diff --quiet && git diff --staged --quiet || \
             (git commit -m "Update compressed data and README stats [skip ci]" && git push)
