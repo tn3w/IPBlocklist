@@ -55,6 +55,7 @@ jobs:
 
       - name: Compress data.json
         run: |
+          rm -f data.json.xz
           xz -k data.json
           ls -lh data.json.xz
 
