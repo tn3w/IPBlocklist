@@ -6,13 +6,13 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/dataset-8.7M_entries-blue?style=for-the-badge" alt="Dataset Size">
+<img src="https://img.shields.io/badge/dataset-8.8M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.2M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4511K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-4574K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(145.7MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(146.9MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
 </p>
 
 </div>
@@ -20,7 +20,7 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 ## 🚀 Key Features
 
 - ✅ Fast IP lookups in <1ms using binary search
-- ✅ 8.7M+ IPs and CIDR ranges from 144 threat intelligence feeds
+- ✅ 8.8M+ IPs and CIDR ranges from 143 threat intelligence feeds
 - ✅ Malware C&C servers, botnets, spam networks, compromised hosts
 - ✅ VPN providers, Tor nodes, datacenter/hosting ASNs
 - ✅ Optimized integer storage for minimal memory footprint
@@ -48,7 +48,7 @@ IPBlocklist downloads threat intelligence from multiple sources (malware C&C ser
 
 The system uses two data sources:
 
-1. **Public Threat Feeds**: 128+ open-source security feeds (configured in feeds.json)
+1. **Public Threat Feeds**: 127+ open-source security feeds (configured in feeds.json)
 2. **IP2Proxy Database**: Commercial proxy/VPN/threat detection database processed by the Rust extractor
 
 Both sources are merged by aggregator.py into a unified data.json file.
@@ -430,17 +430,17 @@ print(json.dumps(result, indent=2))
 
 **Dataset Statistics**:
 
-- Total feeds: 144
-- Individual IPs: 4.2M (4.2M IPv4, 685 IPv6)
-- CIDR ranges: 4511K (4493K IPv4, 19K IPv6)
-- Total entries: 8.7M
-- File size: 145.7MB
+- Total feeds: 143
+- Individual IPs: 4.2M (4.2M IPv4, 719 IPv6)
+- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Total entries: 8.8M
+- File size: 146.9MB
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.2M (4.2M IPv4, 685 IPv6)
-- CIDR ranges: 4511K (4493K IPv4, 19K IPv6)
-- Typical lookup: <1ms for 144 feeds with 8.7M entries
+- Individual IPs: 4.2M (4.2M IPv4, 719 IPv6)
+- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Typical lookup: <1ms for 143 feeds with 8.8M entries
 
 **Memory Usage**:
 
