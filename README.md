@@ -12,7 +12,7 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(147.3MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json"><img src="https://img.shields.io/badge/download-data.json_(147.6MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download"></a>
 </p>
 
 </div>
@@ -431,14 +431,14 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.2M (4.2M IPv4, 740 IPv6)
+- Individual IPs: 4.2M (4.2M IPv4, 5,191 IPv6)
 - CIDR ranges: 4571K (4553K IPv4, 19K IPv6)
 - Total entries: 8.8M
-- File size: 147.3MB
+- File size: 147.6MB
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.2M (4.2M IPv4, 740 IPv6)
+- Individual IPs: 4.2M (4.2M IPv4, 5,191 IPv6)
 - CIDR ranges: 4571K (4553K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 143 feeds with 8.8M entries
 
