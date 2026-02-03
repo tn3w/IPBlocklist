@@ -48,19 +48,10 @@ jobs:
       - name: Download and process feeds
         run: python aggregator.py
 
-      - name: Compress and split data.json
+      - name: Compress data.json
         run: |
-          rm -f data.json.*.xz
-          xz -9e -k data.json
-          split -b 95M -d data.json.xz data.json.xz.
-          rm -f data.json.xz
-          for file in data.json.xz.*; do
-            if [ -f "$file" ]; then
-              mv "$file" "${file}.xz"
-            fi
-          done
-          echo "Split files created:"
-          ls -lh data.json.xz.*.xz
+          xz -3 -k data.json
+          ls -lh data.json.xz
 
       - name: Update README with stats
         run: |
@@ -70,6 +61,7 @@ jobs:
           import re
 
           file_size_mb = os.path.getsize("data.json") / (1024 * 1024)
+          compressed_size_mb = os.path.getsize("data.json.xz") / (1024 * 1024)
 
           with open("data.json", 'r') as f:
               data = json.load(f)
@@ -122,8 +114,13 @@ jobs:
               readme
           )
           readme = re.sub(
-              r'data\.json_\([^)]+\)',
-              f'data.json_({file_size_mb:.1f}MB)',
+              r'data\.json\.xz_\([^)]+\)',
+              f'data.json.xz_({compressed_size_mb:.0f}MB)',
+              readme
+          )
+          readme = re.sub(
+              r'\d+MB file \(from \d+MB uncompressed\)',
+              f'{compressed_size_mb:.0f}MB file (from {file_size_mb:.0f}MB uncompressed)',
               readme
           )
 
@@ -161,7 +158,7 @@ jobs:
           )
           readme = re.sub(
               r'- File size: [^\n]+',
-              f'- File size: {file_size_mb:.1f}MB',
+              f'- File size: {file_size_mb:.1f}MB (uncompressed), {compressed_size_mb:.0f}MB (compressed)',
               readme
           )
           readme = re.sub(
@@ -174,26 +171,18 @@ jobs:
               f.write(readme)
 
           print(f"Updated README.md with stats:")
-          print(f"  File size: {file_size_mb:.1f}MB")
+          print(f"  File size: {file_size_mb:.1f}MB (uncompressed)")
+          print(f"  Compressed: {compressed_size_mb:.0f}MB")
           print(f"  Feeds: {num_feeds} ({public_feeds} public)")
           print(f"  IPs: {total_addresses/1_000_000:.1f}M")
           print(f"  Ranges: {total_ranges/1_000:.0f}K")
           print(f"  Total: {total_entries/1_000_000:.1f}M")
           EOF
 
-      - name: Clean git history and commit changes
+      - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          
-          if git ls-files --error-unmatch data.json 2>/dev/null; then
-            git rm --cached data.json
-            git commit -m "Remove data.json from git tracking [skip ci]" || true
-          fi
-          
-          git rm --cached data.json.xz.*.xz 2>/dev/null || true
-          
-          git add data.json.xz.*.xz datacenter_asns.json README.md .gitattributes 2>/dev/null || true
-          
+          git add data.json.xz datacenter_asns.json README.md
           git diff --quiet && git diff --staged --quiet || \
             (git commit -m "Update compressed data and README stats [skip ci]" && git push)
