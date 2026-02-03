@@ -83,7 +83,7 @@
         "name": "tor_onionoo",
         "url": "https://onionoo.torproject.org/details",
         "description": "Tor Project Onionoo all relays",
-        "regex": "\"(?:exit_addresses|or_addresses)\":\\[\"([0-9a-fA-F:.]+):[0-9]+\"|\"(?:exit_addresses|or_addresses)\":\\[\"\\[([0-9a-fA-F:]+)\\]:[0-9]+\"",
+        "regex": "\"([0-9a-fA-F:.]+)(?::[0-9]+)?\"",
         "base_score": 0.38,
         "confidence": 1.0,
         "flags": ["is_tor", "is_anonymizer"],
