@@ -7,12 +7,12 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
 <img src="https://img.shields.io/badge/dataset-8.8M_entries-blue?style=for-the-badge" alt="Dataset Size">
-<img src="https://img.shields.io/badge/IPs-4.2M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4574K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/IPs-4.3M-green?style=for-the-badge" alt="Individual IPs">
+<img src="https://img.shields.io/badge/ranges-4572K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(14MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(15MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz"><img src="https://img.shields.io/badge/download-location.xz_(16MB)-blue?style=for-the-badge&logo=download&logoColor=white" alt="Download Location DB"></a>
 </p>
 
@@ -24,7 +24,7 @@ The datasets are compressed with xz and available as downloadable files.
 
 ### Threat Intelligence Data
 
-The threat intelligence dataset is a 14MB file (from 148MB uncompressed).
+The threat intelligence dataset is a 15MB file (from 148MB uncompressed).
 
 ```bash
 # Download the compressed file
@@ -474,15 +474,15 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.2M (4.2M IPv4, 5,188 IPv6)
-- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Individual IPs: 4.3M (4.2M IPv4, 5,254 IPv6)
+- CIDR ranges: 4572K (4553K IPv4, 19K IPv6)
 - Total entries: 8.8M
-- File size: 147.6MB (uncompressed), 14MB (compressed)
+- File size: 147.7MB (uncompressed), 15MB (compressed)
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.2M (4.2M IPv4, 5,188 IPv6)
-- CIDR ranges: 4574K (4555K IPv4, 19K IPv6)
+- Individual IPs: 4.3M (4.2M IPv4, 5,254 IPv6)
+- CIDR ranges: 4572K (4553K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 143 feeds with 8.8M entries
 
 **Memory Usage**:
