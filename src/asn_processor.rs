@@ -21,6 +21,22 @@ fn parse_ip(ip_str: &str) -> Option<u128> {
     None
 }
 
+fn escape_json_string(s: &str) -> String {
+    s.chars()
+        .flat_map(|c| match c {
+            '"' => vec!['\\', '"'],
+            '\\' => vec!['\\', '\\'],
+            '\n' => vec!['\\', 'n'],
+            '\r' => vec!['\\', 'r'],
+            '\t' => vec!['\\', 't'],
+            c if c.is_control() => {
+                format!("\\u{:04x}", c as u32).chars().collect()
+            }
+            c => vec![c],
+        })
+        .collect()
+}
+
 pub fn process_asn_database(input_path: &str, output_path: &str) -> std::io::Result<()> {
     println!("Processing ASN database from {}...", input_path);
 
@@ -84,14 +100,17 @@ pub fn process_asn_database(input_path: &str, output_path: &str) -> std::io::Res
             writer.write_all(b",")?;
         }
 
+        let country = escape_json_string(&record.country);
+        let description = escape_json_string(&record.description);
+
         write!(
             writer,
             "[{},{},{},\"{}\",\"{}\"]",
             record.range_start,
             record.range_end,
             record.asn,
-            record.country.replace('"', "\\\""),
-            record.description.replace('"', "\\\"")
+            country,
+            description
         )?;
     }
 
