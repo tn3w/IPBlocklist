@@ -39,11 +39,17 @@ jobs:
         run: |
           curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=PX10LITEBIN" -o database.zip
           unzip -o database.zip "*.BIN"
+          xz -k IP2PROXY-LITE-PX10.BIN
+          mv IP2PROXY-LITE-PX10.BIN.xz proxy.xz
           curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=DB9LITEBINIPV6" -o location.zip
           unzip -o location.zip "*.BIN"
           xz -k IP2LOCATION-LITE-DB9.IPV6.BIN
           mv IP2LOCATION-LITE-DB9.IPV6.BIN.xz location.xz
-          ls -lh location.xz
+          curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=DBASNLITEBINIPV6" -o asn.zip
+          unzip -o asn.zip "*.BIN"
+          xz -k IP2LOCATION-LITE-ASN.IPV6.BIN
+          mv IP2LOCATION-LITE-ASN.IPV6.BIN.xz asn.xz
+          ls -lh proxy.xz location.xz asn.xz
 
       - name: Build and run processor
         run: |
@@ -69,6 +75,8 @@ jobs:
           file_size_mb = os.path.getsize("data.json") / (1024 * 1024)
           compressed_size_mb = os.path.getsize("data.json.xz") / (1024 * 1024)
           location_size_mb = os.path.getsize("location.xz") / (1024 * 1024)
+          proxy_size_mb = os.path.getsize("proxy.xz") / (1024 * 1024)
+          asn_size_mb = os.path.getsize("asn.xz") / (1024 * 1024)
 
           with open("data.json", 'r') as f:
               data = json.load(f)
@@ -131,6 +139,16 @@ jobs:
               readme
           )
           readme = re.sub(
+              r'proxy\.xz_\([^)]+\)',
+              f'proxy.xz_({proxy_size_mb:.0f}MB)',
+              readme
+          )
+          readme = re.sub(
+              r'asn\.xz_\([^)]+\)',
+              f'asn.xz_({asn_size_mb:.0f}MB)',
+              readme
+          )
+          readme = re.sub(
               r'\d+MB file \(from \d+MB uncompressed\)',
               f'{compressed_size_mb:.0f}MB file (from {file_size_mb:.0f}MB uncompressed)',
               readme
@@ -186,6 +204,8 @@ jobs:
           print(f"  File size: {file_size_mb:.1f}MB (uncompressed)")
           print(f"  Compressed: {compressed_size_mb:.0f}MB")
           print(f"  Location DB: {location_size_mb:.0f}MB")
+          print(f"  Proxy DB: {proxy_size_mb:.0f}MB")
+          print(f"  ASN DB: {asn_size_mb:.0f}MB")
           print(f"  Feeds: {num_feeds} ({public_feeds} public)")
           print(f"  IPs: {total_addresses/1_000_000:.1f}M")
           print(f"  Ranges: {total_ranges/1_000:.0f}K")
@@ -197,8 +217,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git rm --cached --ignore-unmatch data.json.xz location.xz 2>/dev/null || true
+          git rm --cached --ignore-unmatch data.json.xz location.xz proxy.xz asn.xz 2>/dev/null || true
 
-          git add data.json.xz datacenter_asns.json location.xz README.md
+          git add data.json.xz datacenter_asns.json location.xz proxy.xz asn.xz README.md
           git diff --quiet && git diff --staged --quiet || \
             (git commit -m "Update compressed data and README stats [skip ci]" && git push)

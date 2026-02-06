@@ -14,6 +14,8 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 <p align="center">
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(14MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz"><img src="https://img.shields.io/badge/download-location.xz_(16MB)-blue?style=for-the-badge&logo=download&logoColor=white" alt="Download Location DB"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz"><img src="https://img.shields.io/badge/download-proxy.xz_(0MB)-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Proxy DB"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz"><img src="https://img.shields.io/badge/download-asn.xz_(0MB)-green?style=for-the-badge&logo=download&logoColor=white" alt="Download ASN DB"></a>
 </p>
 
 </div>
@@ -49,15 +51,47 @@ wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz
 xz -d location.xz
 
 # Verify the file
-ls -lh location.bin
+ls -lh IP2LOCATION-LITE-DB9.IPV6.BIN
 ```
 
-### Download Both (One-Liner)
+### IP2Proxy Detection Database
+
+The IP2Proxy LITE PX10 database detects VPN, proxy, Tor, datacenter, and threat IPs for both IPv4 and IPv6.
+
+```bash
+# Download the compressed database
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz
+
+# Decompress to get the binary database
+xz -d proxy.xz
+
+# Verify the file
+ls -lh IP2PROXY-LITE-PX10.BIN
+```
+
+### IP2Location ASN Database
+
+The IP2Location LITE ASN database maps IP addresses to their Autonomous System Numbers (ASN) and organization names for both IPv4 and IPv6.
+
+```bash
+# Download the compressed database
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz
+
+# Decompress to get the binary database
+xz -d asn.xz
+
+# Verify the file
+ls -lh IP2LOCATION-LITE-ASN.IPV6.BIN
+```
+
+### Download All (One-Liner)
 
 ```bash
 wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz && \
 wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz && \
-xz -d data.json.xz location.xz
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz && \
+wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz && \
+xz -d data.json.xz location.xz proxy.xz asn.xz
 ```
 
 ## 🚀 Key Features
