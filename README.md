@@ -6,16 +6,16 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/dataset-8.8M_entries-blue?style=for-the-badge" alt="Dataset Size">
+<img src="https://img.shields.io/badge/dataset-8.9M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.3M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4536K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-4616K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(14MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(15MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz"><img src="https://img.shields.io/badge/download-location.xz_(16MB)-blue?style=for-the-badge&logo=download&logoColor=white" alt="Download Location DB"></a>
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz"><img src="https://img.shields.io/badge/download-proxy.xz_(0MB)-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Proxy DB"></a>
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn-data.json.xz"><img src="https://img.shields.io/badge/download-asn--data.json.xz_(0MB)-green?style=for-the-badge&logo=download&logoColor=white" alt="Download ASN DB"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz"><img src="https://img.shields.io/badge/download-proxy.xz_(31MB)-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Proxy DB"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn-data.json.xz"><img src="https://img.shields.io/badge/download-asn--data.json.xz_(15MB)-green?style=for-the-badge&logo=download&logoColor=white" alt="Download ASN DB"></a>
 </p>
 
 </div>
@@ -26,7 +26,7 @@ The datasets are compressed with xz and available as downloadable files.
 
 ### Threat Intelligence Data
 
-The threat intelligence dataset is a 14MB file (from 146MB uncompressed).
+The threat intelligence dataset is a 15MB file (from 149MB uncompressed).
 
 ```bash
 # Download the compressed file
@@ -97,7 +97,7 @@ xz -d data.json.xz location.xz proxy.xz asn-data.json.xz
 ## 🚀 Key Features
 
 - ✅ Fast IP lookups in <1ms using binary search
-- ✅ 8.8M+ IPs and CIDR ranges from 143 threat intelligence feeds
+- ✅ 8.9M+ IPs and CIDR ranges from 143 threat intelligence feeds
 - ✅ Malware C&C servers, botnets, spam networks, compromised hosts
 - ✅ VPN providers, Tor nodes, datacenter/hosting ASNs
 - ✅ Optimized integer storage for minimal memory footprint
@@ -626,16 +626,16 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.3M (4.2M IPv4, 5,207 IPv6)
-- CIDR ranges: 4536K (4528K IPv4, 8K IPv6)
-- Total entries: 8.8M
-- File size: 146.4MB (uncompressed), 14MB (compressed)
+- Individual IPs: 4.3M (4.3M IPv4, 5,124 IPv6)
+- CIDR ranges: 4616K (4597K IPv4, 19K IPv6)
+- Total entries: 8.9M
+- File size: 148.8MB (uncompressed), 15MB (compressed)
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.3M (4.2M IPv4, 5,207 IPv6)
-- CIDR ranges: 4536K (4528K IPv4, 8K IPv6)
-- Typical lookup: <1ms for 143 feeds with 8.8M entries
+- Individual IPs: 4.3M (4.3M IPv4, 5,124 IPv6)
+- CIDR ranges: 4616K (4597K IPv4, 19K IPv6)
+- Typical lookup: <1ms for 143 feeds with 8.9M entries
 
 **Memory Usage**:
 
