@@ -3,10 +3,19 @@ name = "IPBlocklist"
 version = "0.1.0"
 edition = "2021"
 
+[[bin]]
+name = "main"
+path = "src/main.rs"
+
+[[bin]]
+name = "asn_processor"
+path = "src/asn_processor.rs"
+
 [dependencies]
 serde_json = "1.0"
 memmap2 = "0.9"
 rayon = "1.11"
+flate2 = "1.1"
 
 [profile.release]
 opt-level = 3
