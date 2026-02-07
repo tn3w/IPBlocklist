@@ -626,14 +626,14 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.3M (4.3M IPv4, 5,135 IPv6)
+- Individual IPs: 4.3M (4.3M IPv4, 5,138 IPv6)
 - CIDR ranges: 4614K (4595K IPv4, 19K IPv6)
 - Total entries: 8.9M
 - File size: 149.1MB (uncompressed), 15MB (compressed)
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.3M (4.3M IPv4, 5,135 IPv6)
+- Individual IPs: 4.3M (4.3M IPv4, 5,138 IPv6)
 - CIDR ranges: 4614K (4595K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 143 feeds with 8.9M entries
 
