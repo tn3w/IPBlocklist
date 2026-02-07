@@ -45,25 +45,25 @@ jobs:
           unzip -o location.zip "*.BIN"
           xz -k IP2LOCATION-LITE-DB9.IPV6.BIN
           mv IP2LOCATION-LITE-DB9.IPV6.BIN.xz location.xz
-          curl -L "https://iptoasn.com/data/ip2asn-combined.tsv.gz" -o ip2asn-combined.tsv.gz
-          ls -lh proxy.xz location.xz ip2asn-combined.tsv.gz
+          curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=DBASNLITEBINIPV6" -o asn.zip
+          unzip -o asn.zip "*.BIN"
+          xz -k IP2LOCATION-LITE-DBASN.IPV6.BIN
+          mv IP2LOCATION-LITE-DBASN.IPV6.BIN.xz asn.xz
+          ls -lh proxy.xz location.xz asn.xz
 
       - name: Build and run processors
         run: |
           cargo build --release --bin main
           cargo run --release --bin main
-          cargo build --release --bin asn_processor
-          cargo run --release --bin asn_processor
 
       - name: Download and process feeds
         run: python aggregator.py
 
       - name: Compress data files
         run: |
-          rm -f data.json.xz asn-data.json.xz
+          rm -f data.json.xz
           xz -k data.json
-          xz -k asn-data.json
-          ls -lh data.json.xz asn-data.json.xz
+          ls -lh data.json.xz
 
       - name: Update README with stats
         run: |
@@ -76,7 +76,7 @@ jobs:
           compressed_size_mb = os.path.getsize("data.json.xz") / (1024 * 1024)
           location_size_mb = os.path.getsize("location.xz") / (1024 * 1024)
           proxy_size_mb = os.path.getsize("proxy.xz") / (1024 * 1024)
-          asn_size_mb = os.path.getsize("asn-data.json.xz") / (1024 * 1024)
+          asn_size_mb = os.path.getsize("asn.xz") / (1024 * 1024)
 
           with open("data.json", 'r') as f:
               data = json.load(f)
@@ -144,8 +144,8 @@ jobs:
               readme
           )
           readme = re.sub(
-              r'asn-data\.json\.xz_\([^)]+\)',
-              f'asn-data.json.xz_({asn_size_mb:.0f}MB)',
+              r'asn\.xz_\([^)]+\)',
+              f'asn.xz_({asn_size_mb:.0f}MB)',
               readme
           )
           readme = re.sub(
@@ -217,8 +217,8 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git rm --cached --ignore-unmatch data.json.xz location.xz proxy.xz asn-data.json.xz 2>/dev/null || true
+          git rm --cached --ignore-unmatch data.json.xz location.xz proxy.xz asn.xz 2>/dev/null || true
 
-          git add data.json.xz datacenter_asns.json location.xz proxy.xz asn-data.json.xz README.md
+          git add data.json.xz datacenter_asns.json location.xz proxy.xz asn.xz README.md
           git diff --quiet && git diff --staged --quiet || \
             (git commit -m "Update compressed data and README stats [skip ci]" && git push)
