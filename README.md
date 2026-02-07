@@ -8,14 +8,14 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
 <img src="https://img.shields.io/badge/dataset-8.9M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.3M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4614K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-4609K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/data.json.xz"><img src="https://img.shields.io/badge/download-data.json.xz_(15MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/location.xz"><img src="https://img.shields.io/badge/download-location.xz_(16MB)-blue?style=for-the-badge&logo=download&logoColor=white" alt="Download Location DB"></a>
 <a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/proxy.xz"><img src="https://img.shields.io/badge/download-proxy.xz_(31MB)-purple?style=for-the-badge&logo=download&logoColor=white" alt="Download Proxy DB"></a>
-<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz"><img src="https://img.shields.io/badge/download-asn.xz_(15MB)-green?style=for-the-badge&logo=download&logoColor=white" alt="Download ASN DB"></a>
+<a href="https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz"><img src="https://img.shields.io/badge/download-asn.xz_(4MB)-green?style=for-the-badge&logo=download&logoColor=white" alt="Download ASN DB"></a>
 </p>
 
 </div>
@@ -510,15 +510,15 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 143
-- Individual IPs: 4.3M (4.3M IPv4, 5,138 IPv6)
-- CIDR ranges: 4614K (4595K IPv4, 19K IPv6)
+- Individual IPs: 4.3M (4.3M IPv4, 5,108 IPv6)
+- CIDR ranges: 4609K (4590K IPv4, 19K IPv6)
 - Total entries: 8.9M
-- File size: 149.1MB (uncompressed), 15MB (compressed)
+- File size: 149.2MB (uncompressed), 15MB (compressed)
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.3M (4.3M IPv4, 5,138 IPv6)
-- CIDR ranges: 4614K (4595K IPv4, 19K IPv6)
+- Individual IPs: 4.3M (4.3M IPv4, 5,108 IPv6)
+- CIDR ranges: 4609K (4590K IPv4, 19K IPv6)
 - Typical lookup: <1ms for 143 feeds with 8.9M entries
 
 **Memory Usage**:
