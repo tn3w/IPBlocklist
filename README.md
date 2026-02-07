@@ -71,7 +71,7 @@ ls -lh IP2PROXY-LITE-PX10.BIN
 
 ### IP2Location ASN Database
 
-The IP2Location LITE DBASN database maps IP addresses to their Autonomous System Numbers (ASN) and organization names for both IPv4 and IPv6.
+The IP2Location LITE ASN database maps IP addresses to their Autonomous System Numbers (ASN) and organization names for both IPv4 and IPv6.
 
 ```bash
 # Download the compressed database
@@ -81,7 +81,7 @@ wget https://raw.githubusercontent.com/tn3w/IPBlocklist/master/asn.xz
 xz -d asn.xz
 
 # Verify the file
-ls -lh IP2LOCATION-LITE-DBASN.IPV6.BIN
+ls -lh IP2LOCATION-LITE-ASN.IPV6.BIN
 ```
 
 ### Download All (One-Liner)

@@ -47,8 +47,8 @@ jobs:
           mv IP2LOCATION-LITE-DB9.IPV6.BIN.xz location.xz
           curl -L "https://www.ip2location.com/download/?token=${TOKEN}&file=DBASNLITEBINIPV6" -o asn.zip
           unzip -o asn.zip "*.BIN"
-          xz -k IP2LOCATION-LITE-DBASN.IPV6.BIN
-          mv IP2LOCATION-LITE-DBASN.IPV6.BIN.xz asn.xz
+          xz -k IP2LOCATION-LITE-ASN.IPV6.BIN
+          mv IP2LOCATION-LITE-ASN.IPV6.BIN.xz asn.xz
           ls -lh proxy.xz location.xz asn.xz
 
       - name: Build and run processors
