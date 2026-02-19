@@ -1,0 +1,73 @@
+name: Update Feeds
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Download and process feeds
+        run: python aggregator.py
+
+      - name: Create Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          TAG_NAME="v$(date -u +%Y%m%d-%H%M%S)"
+
+          gh release create "$TAG_NAME" \
+            blocklist.json \
+            --title "Blocklist Update - $TIMESTAMP" \
+            --notes "Automated blocklist update from threat intelligence feeds.
+
+          **Files:**
+          - \`blocklist.json\` - Threat intelligence data
+
+          **Download:**
+          \`\`\`bash
+          wget https://github.com/tn3w/IPBlocklist/releases/latest/download/blocklist.json
+          \`\`\`"
+
+      - name: Cleanup old releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          RELEASES=$(gh release list --limit 100 --json tagName,createdAt --jq 'sort_by(.createdAt) | reverse | .[].tagName')
+
+          COUNT=0
+          for TAG in $RELEASES; do
+            COUNT=$((COUNT + 1))
+            if [ $COUNT -gt 3 ]; then
+              echo "Deleting old release: $TAG"
+              gh release delete "$TAG" --yes 2>/dev/null || true
+              git push --delete origin "$TAG" 2>/dev/null || true
+            fi
+          done
