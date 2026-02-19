@@ -39,7 +39,7 @@ jobs:
 
           **Download:**
           \`\`\`bash
-          wget https://github.com/tn3w/IPBlocklist/releases/latest/download/blocklist.json
+          wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.json
           \`\`\`"
 
       - name: Cleanup old releases
