@@ -2,17 +2,17 @@
 
 # 🔒 IPBlocklist
 
-Threat intelligence aggregator that collects, processes, and serves IP reputation data from 128 security feeds into an optimized binary format for fast lookups.
+Threat intelligence aggregator that collects, processes, and serves IP reputation data from 127 security feeds into an optimized binary format for fast lookups.
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/dataset-9.1M_entries-blue?style=for-the-badge" alt="Dataset Size">
+<img src="https://img.shields.io/badge/dataset-5.0M_entries-blue?style=for-the-badge" alt="Dataset Size">
 <img src="https://img.shields.io/badge/IPs-4.4M-green?style=for-the-badge" alt="Individual IPs">
-<img src="https://img.shields.io/badge/ranges-4647K-orange?style=for-the-badge" alt="CIDR Ranges">
+<img src="https://img.shields.io/badge/ranges-552K-orange?style=for-the-badge" alt="CIDR Ranges">
 </p>
 
 <p align="center">
-<a href="https://github.com/tn3w/IPBlocklist/releases/latest/download/blocklist.json"><img src="https://img.shields.io/badge/download-blocklist.json_(60MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
+<a href="https://github.com/tn3w/IPBlocklist/releases/latest/download/blocklist.json"><img src="https://img.shields.io/badge/download-blocklist.json_(58MB)-red?style=for-the-badge&logo=download&logoColor=white" alt="Download Threat Data"></a>
 </p>
 
 </div>
@@ -20,7 +20,7 @@ Threat intelligence aggregator that collects, processes, and serves IP reputatio
 ## 🚀 Key Features
 
 - ✅ Fast IP lookups in <1ms using binary search
-- ✅ 9.1M+ IPs and CIDR ranges from 127 threat intelligence feeds
+- ✅ 5.0M+ IPs and CIDR ranges from 127 threat intelligence feeds
 - ✅ Malware C&C servers, botnets, spam networks, compromised hosts
 - ✅ VPN providers, Tor nodes, datacenter/hosting ASNs
 - ✅ Optimized integer storage for minimal memory footprint
@@ -33,7 +33,7 @@ The dataset is available as a downloadable JSON file.
 
 ### Threat Intelligence Data
 
-The threat intelligence dataset is approximately 60MB.
+The threat intelligence dataset is approximately 58MB.
 
 ```bash
 # Download the file
@@ -382,16 +382,16 @@ print(json.dumps(result, indent=2))
 **Dataset Statistics**:
 
 - Total feeds: 127
-- Individual IPs: 4.4M (4.4M IPv4, 5,655 IPv6)
-- CIDR ranges: 4647K (4628K IPv4, 19K IPv6)
-- Total entries: 9.1M
-- File size: 60MB
+- Individual IPs: 4.4M (4.4M IPv4, 6k IPv6)
+- CIDR ranges: 552K (545K IPv4, 7K IPv6)
+- Total entries: 5.0M
+- File size: 58MB
 
 **Lookup Complexity**:
 
-- Individual IPs: 4.4M (4.4M IPv4, 5,655 IPv6)
-- CIDR ranges: 4647K (4628K IPv4, 19K IPv6)
-- Typical lookup: <1ms for 127 feeds with 9.1M entries
+- Individual IPs: 4.4M (4.4M IPv4, 6k IPv6)
+- CIDR ranges: 552K (545K IPv4, 7K IPv6)
+- Typical lookup: <1ms for 127 feeds with 5.0M entries
 
 **Memory Usage**:
 
