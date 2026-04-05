@@ -1083,11 +1083,11 @@
         "url": "https://bgp.tools/tags/c2s",
         "description": "BGP.tools Malware C2 tag",
         "regex": "AS([0-9]+)",
-        "base_score": 0.5,
-        "confidence": 0.45,
+        "base_score": 0.35,
+        "confidence": 0.9,
         "is_asn": true,
-        "flags": ["is_c2_server"],
-        "categories": ["malware", "botnet"]
+        "flags": ["is_datacenter"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "bgptools_ddos_mitigation_asns",
