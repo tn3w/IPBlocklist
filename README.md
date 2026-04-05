@@ -263,7 +263,7 @@ The `examples/` directory contains complete single-file lookup implementations:
 | D          | `lookup.d`     | no   |
 | Dart       | `lookup.dart`  | no   |
 | Elixir     | `lookup.exs`   | no   |
-| Erlang     | `lookup.erl`   | no   |
+| Erlang     | `lookup.erl`   | yes   |
 | Go         | `lookup.go`    | yes  |
 | Haskell    | `lookup.hs`    | no   |
 | Java       | `lookup.java`  | no   |
