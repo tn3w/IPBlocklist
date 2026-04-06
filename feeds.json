@@ -1641,7 +1641,7 @@
         "description": "iCloud Private Relay - Official egress IP ranges (CSV)",
         "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?),",
         "base_score": 0.4,
-        "confidence": 0.99,
+        "confidence": 1.0,
         "flags": ["is_vpn", "is_proxy", "is_cdn"],
         "categories": ["anonymizer", "infrastructure"]
     },
@@ -1668,6 +1668,16 @@
         "provider_name": "Windscribe",
         "flags": ["is_vpn"],
         "categories": ["anonymizer"]
+    },
+    {
+        "name": "needamulligan_blocklist",
+        "url": "https://raw.githubusercontent.com/NeedAMulligan/Block_List_IP_Ranges/refs/heads/main/Consolidated-Blocked-IPs%20with%20ASN%20Info.txt",
+        "description": "NeedAMulligan - Consolidated blocked IP ranges with ASN info",
+        "regex": "^(?!#)([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+(?:/\\d+)?)",
+        "base_score": 0.6,
+        "confidence": 0.7,
+        "flags": ["is_scanner"],
+        "categories": ["attacks"]
     },
     {
         "name": "proxy_pub",
