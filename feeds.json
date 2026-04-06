@@ -1674,8 +1674,8 @@
         "url": "https://raw.githubusercontent.com/NeedAMulligan/Block_List_IP_Ranges/refs/heads/main/Consolidated-Blocked-IPs%20with%20ASN%20Info.txt",
         "description": "NeedAMulligan - Consolidated blocked IP ranges with ASN info",
         "regex": "^(?!#)([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+(?:/\\d+)?)",
-        "base_score": 0.6,
-        "confidence": 0.7,
+        "base_score": 0.5,
+        "confidence": 0.6,
         "flags": ["is_scanner"],
         "categories": ["attacks"]
     },
