@@ -4,7 +4,7 @@
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/feeds-162-blue?style=for-the-badge" alt="Feed Count">
+<img src="https://img.shields.io/badge/feeds-163-blue?style=for-the-badge" alt="Feed Count">
 <img src="https://img.shields.io/badge/artifacts-4-green?style=for-the-badge" alt="Artifact Count">
 </p>
 
@@ -18,7 +18,7 @@ artifacts:
 - `asns.json`: normalized ASN lists keyed by feed name
 - `asn_prefixes.json`: cached ASN → announced prefixes
 
-The current dataset is built from 162 feeds and includes IPv4, IPv6, CIDR
+The current dataset is built from 163 feeds and includes IPv4, IPv6, CIDR
 ranges, announced prefixes derived from ASN feeds, and proxy-type ranges from
 IP2X.
 
@@ -360,7 +360,7 @@ print(ip_in_blocklist_txt("8.8.8.8"))
 
 ## Performance
 
-- Total feeds: 162
+- Total feeds: 163
 - Proxy type ranges: 4.1M
 - Total entries: about 9.1M
 - Typical lookup latency: under 1 ms
