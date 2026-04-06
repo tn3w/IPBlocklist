@@ -3,6 +3,11 @@ name: Update Feeds
 on:
   schedule:
     - cron: '0 0 * * *'
+  push:
+    branches: [master]
+    paths:
+      - 'feeds.json'
+      - 'aggregator.py'
   workflow_dispatch:
 
 jobs:
