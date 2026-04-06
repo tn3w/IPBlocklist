@@ -451,7 +451,7 @@
     },
     {
         "name": "nordvpn",
-        "url": "https://api.nordvpn.com/v1/servers?limit=10000",
+        "url": "https://api.nordvpn.com/v1/servers?limit=0",
         "description": "NordVPN servers",
         "regex": "\"(?:station|ipv6_station)\":\"([0-9a-fA-F:.]+)\"",
         "base_score": 0.5,
