@@ -1,7 +1,6 @@
 import ipaddress
 import json
 import os
-import random
 import re
 import ssl
 import struct
@@ -9,17 +8,7 @@ import subprocess
 import threading
 import time
 import urllib.request
-from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
-
-try:
-    from curl_cffi import requests as cffi_requests
-
-    _CFFI_AVAILABLE = True
-except ImportError:
-    _CFFI_AVAILABLE = False
-
-_CFFI_BROWSERS = ["chrome120", "chrome119", "edge99", "safari15_5"]
 
 _ASN_PREFIXES_PATH = "asn_prefixes.json"
 _asn_prefixes: dict = {}
@@ -73,35 +62,17 @@ def urlopen_with_expired_cert_fallback(request, timeout):
         )
 
 
-def download_source_cffi(url, timeout=30):
-    for attempt in range(1, 4):
-        browser = random.choice(_CFFI_BROWSERS)
-        try:
-            response = cffi_requests.get(
-                url,
-                impersonate=browser,
-                headers={"Accept-Language": "en-US,en;q=0.9"},
-                timeout=timeout,
-            )
-            if response.status_code == 200:
-                return response.text.splitlines()
-            print(
-                f"Error downloading {url} (attempt {attempt}/3): HTTP {response.status_code}"
-            )
-        except Exception as error:
-            print(f"Error downloading {url} (attempt {attempt}/3): {error}")
-        if attempt < 3:
-            time.sleep(2**attempt)
-    return []
-
-
 def download_source(url, timeout=30):
-    if _CFFI_AVAILABLE and "bgp.tools" in url:
-        return download_source_cffi(url, timeout)
-
     for attempt in range(1, 4):
         try:
-            request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            request = urllib.request.Request(
+                url,
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/131.0.0.0 Safari/537.36"
+                },
+            )
             with urlopen_with_expired_cert_fallback(
                 request,
                 timeout=timeout,

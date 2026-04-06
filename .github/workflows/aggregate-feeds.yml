@@ -25,9 +25,6 @@ jobs:
         run: cargo build --release
         working-directory: cidr_minimizer
 
-      - name: Install Python dependencies
-        run: pip install curl_cffi
-
       - name: Download and process feeds
         run: python aggregator.py
 
