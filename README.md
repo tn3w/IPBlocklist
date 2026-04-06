@@ -4,7 +4,7 @@
 
 <p align="center">
 <img src="https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=Build&style=for-the-badge" alt="GitHub Workflow Status">
-<img src="https://img.shields.io/badge/feeds-163-blue?style=for-the-badge" alt="Feed Count">
+<img src="https://img.shields.io/badge/feeds-162-blue?style=for-the-badge" alt="Feed Count">
 <img src="https://img.shields.io/badge/artifacts-4-green?style=for-the-badge" alt="Artifact Count">
 </p>
 
@@ -18,7 +18,7 @@ artifacts:
 - `asns.json`: normalized ASN lists keyed by feed name
 - `asn_prefixes.json`: cached ASN → announced prefixes
 
-The current dataset is built from 163 feeds and includes IPv4, IPv6, CIDR
+The current dataset is built from 162 feeds and includes IPv4, IPv6, CIDR
 ranges, announced prefixes derived from ASN feeds, and proxy-type ranges from
 IP2X.
 
@@ -93,8 +93,10 @@ flowchart TD
 overlapping ranges, and writes `blocklist.bin`, `asns.json`, and `blocklist.txt`.
 
 Feeds marked `is_asn` support remote (`url` + `regex`) or static (`asns`) input.
-Use `base_score: 0.0` to include an ASN feed in `blocklist.bin`/`asns.json`
-without affecting `blocklist.txt`.
+The `url` field accepts a single string or a list of strings; results are
+combined. URLs containing `TIME` have it replaced with the current unix
+timestamp at download time. Use `base_score: 0.0` to include an ASN feed in
+`blocklist.bin`/`asns.json` without affecting `blocklist.txt`.
 
 ## Artifacts
 
@@ -212,7 +214,7 @@ Common fields:
 
 IP and CIDR feed fields:
 
-- `url`
+- `url` can be `str` or `list[str]`
 - `regex`
 
 ASN feed fields:
@@ -263,7 +265,7 @@ The `examples/` directory contains complete single-file lookup implementations:
 | D          | `lookup.d`     | no   |
 | Dart       | `lookup.dart`  | no   |
 | Elixir     | `lookup.exs`   | no   |
-| Erlang     | `lookup.erl`   | yes   |
+| Erlang     | `lookup.erl`   | yes  |
 | Go         | `lookup.go`    | yes  |
 | Haskell    | `lookup.hs`    | no   |
 | Java       | `lookup.java`  | no   |
@@ -358,7 +360,7 @@ print(ip_in_blocklist_txt("8.8.8.8"))
 
 ## Performance
 
-- Total feeds: 163
+- Total feeds: 162
 - Proxy type ranges: 4.1M
 - Total entries: about 9.1M
 - Typical lookup latency: under 1 ms
@@ -373,6 +375,12 @@ print(ip_in_blocklist_txt("8.8.8.8"))
 ## AI Disclosure
 
 This project was developed with the assistance of AI tools, including GPT-5.4 and Claude Opus 4.6. These tools were used to help generate code, documentation, and other content. The human contributors provided guidance, review, and oversight throughout the development process to ensure the quality and accuracy of the final product. An example of AI-generated content is ./examples whch contains lookup implementations in multiple programming languages, created with the help of AI tools.
+
+## Check feed count
+
+```bash
+python3 -c "import json; d=json.load(open('feeds.json')); print(len(d))"
+```
 
 ## License
 
