@@ -68,6 +68,7 @@ flowchart LR
     A[feeds.json] --> B[aggregator.py]
     B --> C[blocklist.bin]
     B --> D[asns.json]
+    B --> AP[asn_prefixes.json]
     B --> E[scored ranges]
     E --> F[cidr_minimizer]
     F --> G[blocklist.txt]
@@ -79,6 +80,7 @@ flowchart TD
     B[ASN feeds from remote sources] --> C[RIPEstat announced prefixes]
     S[Static ASN lists in feeds.json] --> C
     C --> D
+    C --> AP[asn_prefixes.json]
     S --> J[asns.json]
     B --> J
     D --> E[blocklist.bin]
