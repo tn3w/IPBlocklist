@@ -837,8 +837,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": ["is_scanner"],
-        "categories": ["attacks"]
+        "flags": ["is_crawler"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "riskdb_lists_net_hosting",
@@ -877,8 +877,8 @@
         "regex": "^(?![#;/])([0-9a-fA-F:.]+(?:/\\d+)?)",
         "base_score": 0.35,
         "confidence": 0.95,
-        "flags": ["is_scanner"],
-        "categories": ["attacks"]
+        "flags": ["is_crawler"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "riskdb_lists_ip_hosting",
@@ -938,8 +938,8 @@
         "base_score": 0.35,
         "confidence": 0.95,
         "is_asn": true,
-        "flags": ["is_scanner"],
-        "categories": ["attacks"]
+        "flags": ["is_crawler"],
+        "categories": ["infrastructure"]
     },
     {
         "name": "riskdb_lists_asn_vpn",

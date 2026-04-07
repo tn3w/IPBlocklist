@@ -198,6 +198,7 @@ Common fields:
 - `is_malware`
 - `is_mobile`
 - `is_phishing`
+- `is_crawler`
 - `is_proxy`
 - `is_scanner`
 - `is_spammer`
