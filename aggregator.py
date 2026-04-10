@@ -86,24 +86,14 @@ def download_source(url, timeout=30):
     return []
 
 
-def resolve_urls(source):
-    url = source["url"]
-    timestamp = str(int(time.time()))
-    if isinstance(url, list):
-        return [u.replace("TIME", timestamp) for u in url]
-    return [url.replace("TIME", timestamp)]
-
-
 def extract_feed_entries(source):
     regex = source.get("regex")
     if not regex:
         return []
 
     entries = []
-
-    for url in resolve_urls(source):
-        for line in download_source(url):
-            entries.extend(parse_line(line, regex))
+    for line in download_source(source["url"]):
+        entries.extend(parse_line(line, regex))
 
     return entries
 

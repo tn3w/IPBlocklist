@@ -211,3 +211,7 @@ blocklist.bin
 blocklist.txt
 
 docs/data/
+
+# Markdown files except README.md
+*.md
+!README.md

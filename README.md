@@ -95,10 +95,8 @@ flowchart TD
 overlapping ranges, and writes `blocklist.bin`, `asns.json`, and `blocklist.txt`.
 
 Feeds marked `is_asn` support remote (`url` + `regex`) or static (`asns`) input.
-The `url` field accepts a single string or a list of strings; results are
-combined. URLs containing `TIME` have it replaced with the current unix
-timestamp at download time. Use `base_score: 0.0` to include an ASN feed in
-`blocklist.bin`/`asns.json` without affecting `blocklist.txt`.
+Use `base_score: 0.0` to include an ASN feed in `blocklist.bin`/`asns.json`
+without affecting `blocklist.txt`.
 
 ## Artifacts
 
@@ -217,7 +215,7 @@ Common fields:
 
 IP and CIDR feed fields:
 
-- `url` can be `str` or `list[str]`
+- `url`
 - `regex`
 
 ASN feed fields:

@@ -1657,12 +1657,9 @@
     },
     {
         "name": "windscribe",
-        "url": [
-            "https://assets.windscribe.com/serverlist/mob-v2/0/TIME",
-            "https://assets.windscribe.com/serverlist/mob-v2/1/TIME"
-        ],
+        "url": "https://raw.githubusercontent.com/tn3w/Windscribe-IPs/refs/heads/master/windscribe_ips.txt",
         "description": "Windscribe VPN servers",
-        "regex": "\"(?:ip[2-5]?|ping_ip)\"\\s*:\\s*\"(\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3})\"",
+        "regex": "\"([0-9a-fA-F:.]+)\"",
         "base_score": 0.7,
         "confidence": 1.0,
         "provider_name": "Windscribe",
