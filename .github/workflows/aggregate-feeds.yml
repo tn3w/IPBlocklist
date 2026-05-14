@@ -45,7 +45,6 @@ jobs:
         env:
           FEEDS_FILE: feeds-intel.json
           OUT_FILE: intel.bin
-          NO_CACHE: '1'
           PEERINGDB_API_KEY: ${{ secrets.PEERINGDB_API_KEY }}
 
       - name: Create Release

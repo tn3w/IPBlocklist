@@ -1,3 +1,4 @@
+import hashlib
 import ipaddress
 import json
 import os
@@ -10,7 +11,38 @@ import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-_ASN_PREFIXES_PATH = "asn_prefixes.json"
+_ASN_PREFIXES_PATH = os.environ.get("ASN_CACHE_FILE", "asn_prefixes.json")
+_REQUEST_CACHE_DIR = "request_cache"
+_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    "Chrome/131.0.0.0 Safari/537.36"
+)
+
+
+def _request_cache_path(url):
+    return os.path.join(
+        _REQUEST_CACHE_DIR, hashlib.sha256(url.encode()).hexdigest()
+    )
+
+
+def cached_request(url, timeout=30):
+    path = _request_cache_path(url)
+    if os.path.exists(path):
+        with open(path, "rb") as file:
+            return file.read()
+
+    request = urllib.request.Request(url, headers={"User-Agent": _USER_AGENT})
+    with urlopen_with_expired_cert_fallback(request, timeout=timeout) as response:
+        data = response.read()
+
+    os.makedirs(_REQUEST_CACHE_DIR, exist_ok=True)
+    temp = path + ".tmp"
+    with open(temp, "wb") as file:
+        file.write(data)
+    os.replace(temp, path)
+    return data
+
 _asn_prefixes: dict = {}
 _asn_prefixes_lock = threading.Lock()
 
@@ -65,20 +97,8 @@ def urlopen_with_expired_cert_fallback(request, timeout):
 def download_source(url, timeout=30):
     for attempt in range(1, 4):
         try:
-            request = urllib.request.Request(
-                url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/131.0.0.0 Safari/537.36"
-                },
-            )
-            with urlopen_with_expired_cert_fallback(
-                request,
-                timeout=timeout,
-            ) as response:
-                content = response.read().decode("utf-8", errors="ignore")
-                return content.splitlines()
+            data = cached_request(url, timeout=timeout)
+            return data.decode("utf-8", errors="ignore").splitlines()
         except Exception as error:
             print(f"Error downloading {url} (attempt {attempt}/3): {error}")
             if attempt < 3:
@@ -139,18 +159,12 @@ def lookup_asn_prefixes(asn):
     prefixes = []
     for attempt in range(1, 4):
         try:
-            request = urllib.request.Request(
-                url,
-                headers={"User-Agent": "Mozilla/5.0"},
-            )
-            with urlopen_with_expired_cert_fallback(request, timeout=20) as response:
-                data = json.loads(response.read().decode("utf-8"))
-                if data.get("status") != "ok":
-                    break
-
-                raw = data.get("data", {}).get("prefixes", [])
-                prefixes = [p["prefix"] for p in raw if "prefix" in p]
+            data = json.loads(cached_request(url, timeout=20).decode("utf-8"))
+            if data.get("status") != "ok":
                 break
+            raw = data.get("data", {}).get("prefixes", [])
+            prefixes = [p["prefix"] for p in raw if "prefix" in p]
+            break
         except Exception as error:
             print(f"Error retrieving AS{asn_num} (attempt {attempt}/3): {error}")
             if attempt < 3:
@@ -301,9 +315,7 @@ def download_proxy_types():
     url = "https://github.com/tn3w/IP2X/releases/latest/download/proxy_types.bin"
     print(f"Downloading proxy_types.bin...")
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urlopen_with_expired_cert_fallback(request, timeout=60) as response:
-            data = response.read()
+        data = cached_request(url, timeout=60)
     except Exception as error:
         print(f"Error downloading proxy_types.bin: {error}")
         return {}

@@ -7,7 +7,7 @@ use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::sync::OnceLock;
-use std::time::SystemTime;
+use sha2::{Digest, Sha256};
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
     AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -35,53 +35,38 @@ pub struct FeedSpec {
     pub asns: Vec<String>,
 }
 
-pub struct Cfg {
-    pub cache_dir: PathBuf,
-    pub ttl_secs: u64,
-}
-
-impl Default for Cfg {
-    fn default() -> Self {
-        let mut p = if let Some(h) = std::env::var_os("XDG_CACHE_HOME") {
-            PathBuf::from(h)
-        } else {
-            let mut p = PathBuf::from(std::env::var_os("HOME").expect("HOME"));
-            p.push(".cache");
-            p
-        };
-        p.push("ipblocklist-builder");
-        let _ = fs::create_dir_all(&p);
-        let ttl = if std::env::var_os("NO_CACHE").is_some() { 0 } else { 7 * 86400 };
-        Self { cache_dir: p, ttl_secs: ttl }
-    }
-}
+const REQUEST_CACHE_DIR: &str = "request_cache";
 
 static ASN_CACHE: OnceLock<Mutex<HashMap<u32, Vec<String>>>> = OnceLock::new();
 
-fn asn_cache_path(cfg: &Cfg) -> PathBuf {
-    cfg.cache_dir.join("asn_prefixes.json")
+fn asn_cache_path() -> PathBuf {
+    if let Some(p) = std::env::var_os("ASN_CACHE_FILE") {
+        return PathBuf::from(p);
+    }
+    PathBuf::from("asn_prefixes.json")
 }
 
-fn load_asn_cache(cfg: &Cfg) {
-    let map = if cfg.ttl_secs == 0 {
-        HashMap::new()
-    } else {
-        fs::read(asn_cache_path(cfg)).ok()
-            .and_then(|b| serde_json::from_slice::<HashMap<String, Vec<String>>>(&b).ok())
-            .map(|m| m.into_iter()
-                .filter_map(|(k, v)| k.parse::<u32>().ok().map(|n| (n, v))).collect())
-            .unwrap_or_default()
-    };
+fn load_asn_cache() {
+    let map = fs::read(asn_cache_path()).ok()
+        .and_then(|b| serde_json::from_slice::<HashMap<String, Vec<String>>>(&b).ok())
+        .map(|m| m.into_iter()
+            .filter_map(|(k, v)| k.parse::<u32>().ok().map(|n| (n, v))).collect())
+        .unwrap_or_default();
     let _ = ASN_CACHE.set(Mutex::new(map));
 }
 
-fn save_asn_cache(cfg: &Cfg) -> Result<()> {
-    if cfg.ttl_secs == 0 { return Ok(()); }
+fn save_asn_cache() -> Result<()> {
     let guard = ASN_CACHE.get().ok_or("asn cache uninit")?.lock().unwrap();
     let m: HashMap<String, &Vec<String>> = guard.iter()
         .map(|(k, v)| (k.to_string(), v)).collect();
-    fs::write(asn_cache_path(cfg), serde_json::to_vec(&m)?)?;
+    fs::write(asn_cache_path(), serde_json::to_vec(&m)?)?;
     Ok(())
+}
+
+fn request_cache_path(url: &str) -> PathBuf {
+    let hex: String = Sha256::digest(url.as_bytes())
+        .iter().map(|b| format!("{b:02x}")).collect();
+    PathBuf::from(REQUEST_CACHE_DIR).join(hex)
 }
 
 pub fn flag_mask(flags: &[String], all_flags: &[String]) -> u32 {
@@ -104,6 +89,22 @@ fn agent() -> ureq::Agent {
 static PEERINGDB_LOCK: Mutex<()> = Mutex::new(());
 
 fn http_get(url: &str) -> Result<Vec<u8>> {
+    let raw = http_get_raw(url)?;
+    if url.ends_with(".gz") {
+        let mut d = flate2::read::GzDecoder::new(&raw[..]);
+        let mut out = Vec::new();
+        d.read_to_end(&mut out)?;
+        Ok(out)
+    } else {
+        Ok(raw)
+    }
+}
+
+fn http_get_raw(url: &str) -> Result<Vec<u8>> {
+    let cache_path = request_cache_path(url);
+    if let Ok(b) = fs::read(&cache_path) {
+        return Ok(b);
+    }
     let is_pdb = url.contains("peeringdb.com");
     let _guard;
     if is_pdb {
@@ -127,33 +128,9 @@ fn http_get(url: &str) -> Result<Vec<u8>> {
     };
     let mut buf = Vec::new();
     res.into_reader().take(500 * 1024 * 1024).read_to_end(&mut buf)?;
-    if url.ends_with(".gz") {
-        let mut d = flate2::read::GzDecoder::new(&buf[..]);
-        let mut out = Vec::new();
-        d.read_to_end(&mut out)?;
-        Ok(out)
-    } else {
-        Ok(buf)
-    }
-}
-
-fn fetch_cached(cfg: &Cfg, name: &str, url: &str) -> Result<Vec<u8>> {
-    if cfg.ttl_secs == 0 {
-        return http_get(url);
-    }
-    let p = cfg.cache_dir.join(format!("{name}.raw"));
-    if let Ok(meta) = fs::metadata(&p) {
-        if let Ok(mtime) = meta.modified() {
-            if let Ok(age) = SystemTime::now().duration_since(mtime) {
-                if age.as_secs() < cfg.ttl_secs {
-                    return Ok(fs::read(&p)?);
-                }
-            }
-        }
-    }
-    let body = http_get(url)?;
-    fs::write(&p, &body)?;
-    Ok(body)
+    let _ = fs::create_dir_all(REQUEST_CACHE_DIR);
+    let _ = fs::write(&cache_path, &buf);
+    Ok(buf)
 }
 
 fn parse_token(token: &str) -> Option<(u128, u128, bool)> {
@@ -282,7 +259,7 @@ fn resolve_asns(asns: Vec<u32>) -> Vec<String> {
     prefixes.into_inner().unwrap()
 }
 
-pub fn run_feed(cfg: &Cfg, spec: &FeedSpec, flag_names: &[String]) -> Result<FeedResult> {
+pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<FeedResult> {
     let flags = flag_mask(&spec.flags, flag_names);
 
     let tokens = if spec.is_asn && !spec.asns.is_empty() {
@@ -290,7 +267,7 @@ pub fn run_feed(cfg: &Cfg, spec: &FeedSpec, flag_names: &[String]) -> Result<Fee
     } else if spec.url.is_empty() {
         return Err(format!("{}: empty url and no static asns", spec.name).into());
     } else {
-        let body = fetch_cached(cfg, &spec.name, &spec.url)?;
+        let body = http_get(&spec.url)?;
         extract_tokens(&body, &spec.regex)?
     };
 
@@ -328,9 +305,8 @@ pub fn run_feed(cfg: &Cfg, spec: &FeedSpec, flag_names: &[String]) -> Result<Fee
 
 pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     let ff: FeedsFile = serde_json::from_slice(&fs::read(feeds_file)?)?;
-    let cfg = Cfg::default();
     let flag_names = ff.flags.clone();
-    load_asn_cache(&cfg);
+    load_asn_cache();
 
     let queue: Mutex<Vec<(usize, FeedSpec)>> =
         Mutex::new(ff.feeds.iter().cloned().enumerate().rev().collect());
@@ -343,7 +319,7 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
                 let item = queue.lock().unwrap().pop();
                 match item {
                     Some((i, spec)) => {
-                        let r = run_feed(&cfg, &spec, &flag_names)
+                        let r = run_feed(&spec, &flag_names)
                             .map_err(|e| e.to_string());
                         results.lock().unwrap()[i] = Some(r);
                     }
@@ -377,7 +353,7 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     }
 
     if !failures.is_empty() {
-        let _ = save_asn_cache(&cfg);
+        let _ = save_asn_cache();
         return Err(format!("{} feed(s) failed:\n  {}",
             failures.len(), failures.join("\n  ")).into());
     }
@@ -390,6 +366,6 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
         println!("values: {} | strings: {}", b.values.len(), b.strings.len());
     }
     b.write(out)?;
-    save_asn_cache(&cfg)?;
+    save_asn_cache()?;
     Ok(())
 }
