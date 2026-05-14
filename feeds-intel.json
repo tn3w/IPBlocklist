@@ -1,0 +1,1101 @@
+{
+  "flags": [
+    "vpn",
+    "proxy",
+    "tor",
+    "malware",
+    "c2",
+    "scanner",
+    "brute_force",
+    "spammer",
+    "compromised",
+    "datacenter",
+    "cdn",
+    "anycast",
+    "crawler",
+    "bot",
+    "cloud",
+    "private_relay",
+    "anonymizer",
+    "mobile",
+    "isp",
+    "government"
+  ],
+  "feeds": [
+    {
+      "name": "feodotracker",
+      "url": "https://feodotracker.abuse.ch/downloads/ipblocklist.txt",
+      "regex": "^(?:[ \\t]*)([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["c2", "malware"]
+    },
+    {
+      "name": "urlhaus",
+      "url": "https://urlhaus.abuse.ch/downloads/text_online/",
+      "regex": "https?://(\\[?[0-9a-fA-F:.]+\\]?)(?::\\d+)?/",
+      "flags": ["malware"]
+    },
+    {
+      "name": "threatfox",
+      "url": "https://threatfox.abuse.ch/export/csv/ip-port/recent/",
+      "regex": "\"([0-9.]+):\\d+\"",
+      "flags": ["c2", "malware"]
+    },
+    {
+      "name": "botvrij",
+      "url": "https://www.botvrij.eu/data/ioclist.ip-dst.raw",
+      "regex": "^([0-9.]+)",
+      "flags": ["c2", "malware"]
+    },
+    {
+      "name": "emerging_compromised",
+      "url": "https://rules.emergingthreats.net/blockrules/compromised-ips.txt",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["compromised", "malware"]
+    },
+    {
+      "name": "blocklist_de_all",
+      "url": "https://lists.blocklist.de/lists/all.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "blocklist_de_ssh",
+      "url": "https://lists.blocklist.de/lists/ssh.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["brute_force"]
+    },
+    {
+      "name": "blocklist_de_mail",
+      "url": "https://lists.blocklist.de/lists/mail.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["brute_force"]
+    },
+    {
+      "name": "spamhaus_drop",
+      "url": "https://www.spamhaus.org/drop/drop.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["spammer", "malware", "compromised"]
+    },
+    {
+      "name": "spamhaus_dropv6",
+      "url": "https://www.spamhaus.org/drop/dropv6.txt",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["spammer", "malware", "compromised"]
+    },
+    {
+      "name": "stopforumspam",
+      "url": "https://www.stopforumspam.com/downloads/toxic_ip_cidr.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["spammer"]
+    },
+    {
+      "name": "firehol_level1",
+      "url": "https://iplists.firehol.org/files/firehol_level1.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "firehol_level2",
+      "url": "https://iplists.firehol.org/files/firehol_level2.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "firehol_proxies",
+      "url": "https://iplists.firehol.org/files/firehol_proxies.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["proxy", "anonymizer"]
+    },
+    {
+      "name": "firehol_datacenters",
+      "url": "https://iplists.firehol.org/files/datacenters.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "firehol_abusers_30d",
+      "url": "https://iplists.firehol.org/files/firehol_abusers_30d.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "cinsscore",
+      "url": "https://cinsscore.com/list/ci-badguys.txt",
+      "regex": "^([0-9.]+)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "alienvault",
+      "url": "https://reputation.alienvault.com/reputation.generic",
+      "regex": "^([0-9.]+)\\s+#",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "tor_exits",
+      "provider": "Tor",
+      "url": "https://check.torproject.org/torbulkexitlist",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["tor", "anonymizer"]
+    },
+    {
+      "name": "tor_onionoo",
+      "provider": "Tor",
+      "url": "https://onionoo.torproject.org/details?type=relay&fields=or_addresses,exit_addresses",
+      "regex": "\"(?:\\[)?([0-9a-fA-F:.]+)(?:\\])?:[0-9]+\"",
+      "flags": ["tor", "anonymizer"]
+    },
+    {
+      "name": "protonvpn_tn3w",
+      "provider": "ProtonVPN",
+      "url": "https://raw.githubusercontent.com/tn3w/ProtonVPN-IPs/refs/heads/master/protonvpn_ips.json",
+      "regex": "\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "nordvpn",
+      "provider": "NordVPN",
+      "url": "https://api.nordvpn.com/v1/servers?limit=0",
+      "regex": "\"(?:station|ipv6_station)\":\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "expressvpn",
+      "provider": "ExpressVPN",
+      "url": "https://raw.githubusercontent.com/sudesh0sudesh/ExpressVPN-IPs/refs/heads/main/express_ips.csv",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "surfshark",
+      "provider": "Surfshark",
+      "url": "https://raw.githubusercontent.com/sudesh0sudesh/surfshark-IPs/refs/heads/main/surfshark_ips.csv",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "pia_api",
+      "provider": "Private Internet Access",
+      "url": "https://serverlist.piaservers.net/vpninfo/servers/v6",
+      "regex": "\"ip\":\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "tunnelbear",
+      "provider": "TunnelBear",
+      "url": "https://raw.githubusercontent.com/tn3w/TunnelBear-IPs/refs/heads/master/tunnelbear_ips.json",
+      "regex": "\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "mullvad",
+      "provider": "Mullvad",
+      "url": "https://api.mullvad.net/www/relays/all",
+      "regex": "\"(?:ipv4_addr_in|ipv6_addr_in)\":\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "windscribe",
+      "provider": "Windscribe",
+      "url": "https://raw.githubusercontent.com/tn3w/Windscribe-IPs/refs/heads/master/windscribe_ips.txt",
+      "regex": "\"?([0-9a-fA-F:.]+)\"?",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "cyberghost",
+      "provider": "CyberGhost",
+      "url": "https://gist.githubusercontent.com/Windows81/17e75698d4fe349bcfb71d1c1ca537d4/raw",
+      "regex": "^([0-9.]+)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "astrill",
+      "provider": "Astrill",
+      "url": "https://storage.googleapis.com/spur-astrill-vpn/ips.txt",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "ivpn",
+      "provider": "IVPN",
+      "url": "https://api.ivpn.net/v4/servers.json",
+      "regex": "\"host\":\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "airvpn",
+      "provider": "AirVPN",
+      "url": "https://airvpn.org/api/status/",
+      "regex": "\"ip_v[46]_in\\d*\":\\s*\"([0-9a-fA-F:.]+)\"",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "apple_relay",
+      "provider": "Apple Private Relay",
+      "url": "https://mask-api.icloud.com/egress-ip-ranges.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["private_relay", "anonymizer"]
+    },
+    {
+      "name": "x4bnet_vpn",
+      "url": "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "x4bnet_dc",
+      "url": "https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "globules_v4",
+      "url": "https://raw.githubusercontent.com/globules-io/vpns-ip-ranges/master/vpn-ipv4.txt",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "globules_v6",
+      "url": "https://raw.githubusercontent.com/globules-io/vpns-ip-ranges/master/vpn-ipv6.txt",
+      "regex": "^([0-9a-fA-F:]+(?:/\\d+)?)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "riskdb_vpn_net",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/net/kind_vpn.txt",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["vpn", "anonymizer"]
+    },
+    {
+      "name": "riskdb_hosting",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/net/kind_hosting.txt",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "aws",
+      "provider": "AWS",
+      "url": "https://ip-ranges.amazonaws.com/ip-ranges.json",
+      "regex": "\"(?:ip_prefix|ipv6_prefix)\":\\s*\"([^\"]+)\"",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "gcp",
+      "provider": "Google Cloud",
+      "url": "https://www.gstatic.com/ipranges/cloud.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([^\"]+)\"",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "google_goog",
+      "provider": "Google",
+      "url": "https://www.gstatic.com/ipranges/goog.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([^\"]+)\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "oracle_cloud",
+      "provider": "Oracle Cloud",
+      "url": "https://docs.oracle.com/en-us/iaas/tools/public_ip_ranges.json",
+      "regex": "\"cidr\":\\s*\"([^\"]+)\"",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "fastly",
+      "provider": "Fastly",
+      "url": "https://api.fastly.com/public-ip-list",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "github",
+      "provider": "GitHub",
+      "url": "https://api.github.com/meta",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "digitalocean",
+      "provider": "DigitalOcean",
+      "url": "https://digitalocean.com/geo/google.csv",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "akamai_v4",
+      "provider": "Akamai",
+      "url": "https://raw.githubusercontent.com/femueller/cloud-ip-ranges/master/akamai-v4-ip-ranges.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cdn"]
+    },
+    {
+      "name": "akamai_v6",
+      "provider": "Akamai",
+      "url": "https://raw.githubusercontent.com/femueller/cloud-ip-ranges/master/akamai-v6-ip-ranges.txt",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["cdn"]
+    },
+    {
+      "name": "zscaler",
+      "provider": "Zscaler",
+      "url": "https://raw.githubusercontent.com/femueller/cloud-ip-ranges/master/zscaler-cloud-ip-ranges.json",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud", "proxy"]
+    },
+    {
+      "name": "cloudflare_v4",
+      "provider": "Cloudflare",
+      "url": "https://www.cloudflare.com/ips-v4/",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "cloudflare_v6",
+      "provider": "Cloudflare",
+      "url": "https://www.cloudflare.com/ips-v6/",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "linode_v4",
+      "provider": "Linode",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/linode/ipv4.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "linode_v6",
+      "provider": "Linode",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/linode/ipv6.txt",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "vultr_v4",
+      "provider": "Vultr",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/vultr/ipv4.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "vultr_v6",
+      "provider": "Vultr",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/vultr/ipv6.txt",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "azure_v4",
+      "provider": "Microsoft Azure",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/microsoft/ipv4.txt",
+      "regex": "^([0-9.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "azure_v6",
+      "provider": "Microsoft Azure",
+      "url": "https://raw.githubusercontent.com/lord-alfred/ipranges/main/microsoft/ipv6.txt",
+      "regex": "^([0-9a-fA-F:]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "googlebot",
+      "provider": "Googlebot",
+      "url": "https://developers.google.com/static/search/apis/ipranges/googlebot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "bingbot",
+      "provider": "Bingbot",
+      "url": "https://www.bing.com/toolbox/bingbot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "applebot",
+      "provider": "AppleBot",
+      "url": "https://search.developer.apple.com/applebot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "duckduckbot",
+      "provider": "DuckDuckBot",
+      "url": "https://duckduckgo.com/duckduckbot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "openai_gptbot",
+      "provider": "OpenAI GPTBot",
+      "url": "https://openai.com/gptbot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "openai_searchbot",
+      "provider": "OpenAI SearchBot",
+      "url": "https://openai.com/searchbot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "openai_chatgpt_user",
+      "provider": "ChatGPT User",
+      "url": "https://openai.com/chatgpt-user.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["bot"]
+    },
+    {
+      "name": "ahrefs",
+      "provider": "AhrefsBot",
+      "url": "https://api.ahrefs.com/v3/public/crawler-ip-ranges",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "cloudfront",
+      "provider": "AWS CloudFront",
+      "url": "https://d7uri8nf7uskq.cloudfront.net/tools/list-cloudfront-ips",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "bunny_cdn",
+      "provider": "Bunny CDN",
+      "url": "https://api.bunny.net/system/edgeserverlist",
+      "regex": "\"([0-9.]+)\"",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "blocklist_de_bots",
+      "url": "https://lists.blocklist.de/lists/bots.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["bot", "brute_force"]
+    },
+    {
+      "name": "abuseipdb_30d",
+      "url": "https://raw.githubusercontent.com/borestad/blocklist-abuseipdb/main/abuseipdb-s100-30d.ipv4",
+      "regex": "^([0-9.]+)",
+      "flags": ["scanner", "compromised", "brute_force"]
+    },
+    {
+      "name": "phishing_active",
+      "url": "https://raw.githubusercontent.com/Phishing-Database/Phishing.Database/master/phishing-IPs-ACTIVE.txt",
+      "regex": "^([0-9.]+)",
+      "flags": ["malware"]
+    },
+    {
+      "name": "maltrail_scanner",
+      "url": "https://raw.githubusercontent.com/stamparm/maltrail/master/trails/static/mass_scanner.txt",
+      "regex": "^([0-9.]+)\\s",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "sblam",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/sblam.ipset",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["spammer"]
+    },
+    {
+      "name": "monosans_proxies",
+      "url": "https://raw.githubusercontent.com/monosans/proxy-list/main/proxies/http.txt",
+      "regex": "^([0-9.]+):\\d+",
+      "flags": ["proxy", "anonymizer"]
+    },
+    {
+      "name": "thespeedx_proxies",
+      "url": "https://raw.githubusercontent.com/TheSpeedX/PROXY-List/master/http.txt",
+      "regex": "^([0-9.]+):\\d+",
+      "flags": ["proxy", "anonymizer"]
+    },
+    {
+      "name": "bgptools_vpn_asns",
+      "url": "https://bgp.tools/tags/vpn.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["vpn", "anonymizer"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_cdn_asns",
+      "url": "https://bgp.tools/tags/cdn.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["cdn"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_hosting_asns",
+      "url": "https://bgp.tools/tags/vpsh.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_c2_asns",
+      "url": "https://bgp.tools/tags/c2s.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["c2", "malware"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_ddos_asns",
+      "url": "https://bgp.tools/tags/ddosm.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["cdn"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_anycast_asns",
+      "url": "https://bgp.tools/tags/anycast.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["anycast"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_tor_asns",
+      "provider": "Tor",
+      "url": "https://bgp.tools/tags/tor.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["tor", "anonymizer"],
+      "is_asn": true
+    },
+    {
+      "name": "mullvad_static_asns",
+      "provider": "Mullvad",
+      "url": "",
+      "regex": "",
+      "flags": ["vpn", "anonymizer"],
+      "is_asn": true,
+      "asns": ["216025"]
+    },
+    {
+      "name": "riskdb_asn_vpn",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/asn/kind_vpn.txt",
+      "regex": "^(?:AS)?([0-9]+)",
+      "flags": ["vpn", "anonymizer"],
+      "is_asn": true
+    },
+    {
+      "name": "riskdb_asn_hosting",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/asn/kind_hosting.txt",
+      "regex": "^(?:AS)?([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "riskdb_asn_scanner",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/asn/kind_scanner.txt",
+      "regex": "^(?:AS)?([0-9]+)",
+      "flags": ["scanner"],
+      "is_asn": true
+    },
+    {
+      "name": "riskdb_asn_crawler",
+      "url": "https://raw.githubusercontent.com/O-X-L/risk-db-lists/refs/heads/main/asn/kind_crawler.txt",
+      "regex": "^(?:AS)?([0-9]+)",
+      "flags": ["crawler", "bot"],
+      "is_asn": true
+    },
+    {
+      "name": "dshield",
+      "url": "https://www.dshield.org/block.txt",
+      "regex": "^([0-9.]+)\\s",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "voipbl",
+      "url": "https://www.voipbl.org/update/",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["brute_force", "scanner"]
+    },
+    {
+      "name": "hagezi_tif",
+      "url": "https://raw.githubusercontent.com/hagezi/dns-blocklists/main/ips/tif.txt",
+      "regex": "^([0-9.]+)",
+      "flags": ["malware", "c2", "scanner"]
+    },
+    {
+      "name": "cybercrime_tracker",
+      "url": "https://cybercrime-tracker.net/all.php",
+      "regex": "([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)",
+      "flags": ["c2", "malware"]
+    },
+    {
+      "name": "drb_ra_c2",
+      "url": "https://raw.githubusercontent.com/drb-ra/C2IntelFeeds/master/feeds/IPC2s-30day.csv",
+      "regex": "^([0-9.]+)",
+      "flags": ["c2", "malware"]
+    },
+    {
+      "name": "blocklist_de_ftp",
+      "url": "https://lists.blocklist.de/lists/ftp.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["brute_force"]
+    },
+    {
+      "name": "blocklist_de_sip",
+      "url": "https://lists.blocklist.de/lists/sip.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["brute_force"]
+    },
+    {
+      "name": "turris_greylist",
+      "url": "https://view.sentinel.turris.cz/greylist-data/greylist-latest.csv",
+      "regex": "^([0-9a-fA-F:.]+),",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "bgptools_mobile_asns",
+      "url": "https://bgp.tools/tags/mobile.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["mobile"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_perso_asns",
+      "url": "https://bgp.tools/tags/perso.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["isp"],
+      "is_asn": true
+    },
+    {
+      "name": "bgptools_gov_asns",
+      "url": "https://bgp.tools/tags/gov.txt",
+      "regex": "^AS([0-9]+)",
+      "flags": ["government"],
+      "is_asn": true
+    },
+    {
+      "name": "dshield_top",
+      "url": "https://feeds.dshield.org/top10-2.txt",
+      "regex": "^([0-9.]+)",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "blocklist_de_email",
+      "url": "https://lists.blocklist.de/lists/email.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["spammer"]
+    },
+    {
+      "name": "spamhaus_asndrop",
+      "url": "https://www.spamhaus.org/drop/asndrop.json",
+      "regex": "\"asn\":([0-9]+)",
+      "flags": ["spammer", "scanner"],
+      "is_asn": true
+    },
+    {
+      "name": "hetzner_asn",
+      "provider": "Hetzner",
+      "url": "https://www.peeringdb.com/api/net?org_id=12507",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "ovh_asn",
+      "provider": "OVH",
+      "url": "https://www.peeringdb.com/api/net?org_id=1433",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "scaleway_asn",
+      "provider": "Scaleway",
+      "url": "https://www.peeringdb.com/api/net?org_id=8168",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "contabo_asn",
+      "provider": "Contabo",
+      "url": "https://www.peeringdb.com/api/net?org_id=12962",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "leaseweb_asn_org38026",
+      "provider": "Leaseweb",
+      "url": "https://www.peeringdb.com/api/net?org_id=38026",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "leaseweb_asn_org6989",
+      "provider": "Leaseweb",
+      "url": "https://www.peeringdb.com/api/net?org_id=6989",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "leaseweb_asn_org7046",
+      "provider": "Leaseweb",
+      "url": "https://www.peeringdb.com/api/net?org_id=7046",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "upcloud_asn_org16876",
+      "provider": "UpCloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=16876",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "upcloud_asn_org24678",
+      "provider": "UpCloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=24678",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "m247_asn",
+      "provider": "M247",
+      "url": "https://www.peeringdb.com/api/net?org_id=6238",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "vpn", "anonymizer"],
+      "is_asn": true
+    },
+    {
+      "name": "choopa_asn",
+      "provider": "Vultr",
+      "url": "https://www.peeringdb.com/api/net?org_id=1051",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "colocrossing_asn",
+      "provider": "HostPapa",
+      "url": "https://www.peeringdb.com/api/net?org_id=42781",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "worldstream_asn",
+      "provider": "WorldStream",
+      "url": "https://www.peeringdb.com/api/net?org_id=6271",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "alibaba_asn_org11170",
+      "provider": "Alibaba Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=11170",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "alibaba_asn_org19745",
+      "provider": "Alibaba Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=19745",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "tencent_asn",
+      "provider": "Tencent Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=8332",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "huawei_asn_org31897",
+      "provider": "Huawei Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=31897",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "huawei_asn_org32165",
+      "provider": "Huawei Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=32165",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "ibm_cloud_asn_org10232",
+      "provider": "IBM Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=10232",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "ibm_cloud_asn_org8076",
+      "provider": "IBM Cloud",
+      "url": "https://www.peeringdb.com/api/net?org_id=8076",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "hostwinds_asn",
+      "provider": "Hostwinds",
+      "url": "https://www.peeringdb.com/api/net?org_id=13221",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "datacamp_asn",
+      "provider": "DataCamp",
+      "url": "https://www.peeringdb.com/api/net?org_id=19169",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cdn"],
+      "is_asn": true
+    },
+    {
+      "name": "firehol_php_dict",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/php_dictionary_30d.ipset",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["brute_force"]
+    },
+    {
+      "name": "firehol_php_harvest",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/php_harvesters_30d.ipset",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["spammer"]
+    },
+    {
+      "name": "firehol_php_spam",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/php_spammers_30d.ipset",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["spammer"]
+    },
+    {
+      "name": "firehol_socks_30d",
+      "url": "https://raw.githubusercontent.com/firehol/blocklist-ipsets/master/socks_proxy_30d.ipset",
+      "regex": "^([0-9.]+(?:/\\d+)?)",
+      "flags": ["proxy", "anonymizer"]
+    },
+    {
+      "name": "dshield_topips",
+      "url": "https://feeds.dshield.org/topips.txt",
+      "regex": "^([0-9.]+)\\s",
+      "flags": ["scanner"]
+    },
+    {
+      "name": "urlhaus_hostfile",
+      "url": "https://urlhaus.abuse.ch/downloads/hostfile/",
+      "regex": "^(?:0\\.0\\.0\\.0\\s+)?([0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+)",
+      "flags": ["malware"]
+    },
+    {
+      "name": "akamai_asn",
+      "provider": "Akamai",
+      "url": "https://www.peeringdb.com/api/net?org_id=14",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["cdn", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "fastly_asn",
+      "provider": "Fastly",
+      "url": "https://www.peeringdb.com/api/net?org_id=12637",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["cdn", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "godaddy_asn",
+      "provider": "GoDaddy",
+      "url": "https://www.peeringdb.com/api/net?org_id=9063",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "namecheap_asn",
+      "provider": "Namecheap",
+      "url": "https://www.peeringdb.com/api/net?org_id=4336",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "hostinger_asn",
+      "provider": "Hostinger",
+      "url": "https://www.peeringdb.com/api/net?org_id=30423",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "liquidweb_asn_org36623",
+      "provider": "Liquid Web",
+      "url": "https://www.peeringdb.com/api/net?org_id=36623",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "liquidweb_asn_org43681",
+      "provider": "Liquid Web",
+      "url": "https://www.peeringdb.com/api/net?org_id=43681",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "rackspace_asn_org57",
+      "provider": "Rackspace",
+      "url": "https://www.peeringdb.com/api/net?org_id=57",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "buyvm_asn",
+      "provider": "BuyVM",
+      "url": "https://www.peeringdb.com/api/net?org_id=22888",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "virmach_asn",
+      "provider": "VirMach",
+      "url": "https://www.peeringdb.com/api/net?org_id=40757",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "ramnode_asn",
+      "provider": "InMotion/RamNode",
+      "url": "https://www.peeringdb.com/api/net?org_id=22481",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "flokinet_asn",
+      "provider": "FlokiNET",
+      "url": "https://www.peeringdb.com/api/net?org_id=22617",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "aeza_asn",
+      "provider": "Aeza",
+      "url": "https://www.peeringdb.com/api/net?org_id=30738",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "scanner"],
+      "is_asn": true
+    },
+    {
+      "name": "ip_volume_asn",
+      "provider": "IP Volume",
+      "url": "https://www.peeringdb.com/api/net?org_id=32317",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "hostkey_asn_org24637",
+      "provider": "HostKey",
+      "url": "https://www.peeringdb.com/api/net?org_id=24637",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "hostkey_asn_org12235",
+      "provider": "HostKey",
+      "url": "https://www.peeringdb.com/api/net?org_id=12235",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "ionos_asn",
+      "provider": "IONOS",
+      "url": "https://www.peeringdb.com/api/net?org_id=356",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "reliablesite_asn",
+      "provider": "ReliableSite",
+      "url": "https://www.peeringdb.com/api/net?org_id=21056",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "zenlayer_asn",
+      "provider": "Zenlayer",
+      "url": "https://www.peeringdb.com/api/net?org_id=13291",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter", "cloud"],
+      "is_asn": true
+    },
+    {
+      "name": "hosthatch_asn",
+      "provider": "HostHatch",
+      "url": "https://www.peeringdb.com/api/net?org_id=29038",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "mythic_beasts_asn_org1594",
+      "provider": "Mythic Beasts",
+      "url": "https://www.peeringdb.com/api/net?org_id=1594",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "mythic_beasts_asn_org11735",
+      "provider": "Mythic Beasts",
+      "url": "https://www.peeringdb.com/api/net?org_id=11735",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "servers_au_asn",
+      "provider": "Dreamscape",
+      "url": "https://www.peeringdb.com/api/net?org_id=12975",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    },
+    {
+      "name": "bluehost_asn",
+      "provider": "Bluehost",
+      "url": "",
+      "regex": "",
+      "flags": ["datacenter"],
+      "is_asn": true,
+      "asns": ["46606"]
+    },
+    {
+      "name": "dreamhost_asn",
+      "provider": "DreamHost",
+      "url": "https://www.peeringdb.com/api/net?org_id=521",
+      "regex": "\"asn\":\\s*([0-9]+)",
+      "flags": ["datacenter"],
+      "is_asn": true
+    }
+  ]
+}

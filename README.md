@@ -10,11 +10,15 @@
 
 </div>
 
-IPBlocklist aggregates IP and ASN threat intelligence into four release
+IPBlocklist aggregates IP and ASN threat intelligence into five release
 artifacts:
 
-- `blocklist.bin`: compact binary data for application lookups
+- `blocklist.bin`: compact binary data for application lookups (legacy
+  IPBL v2 with scoring + categories)
 - `blocklist.txt`: scored, CIDR-minimized text blocklist for firewalls
+- `intel.bin`: SoA columnar binary built by the Rust `builder/` crate
+  from `feeds-intel.json`: mmap-friendly, flag-bitmask data model, no
+  scoring/categories, ~30 MB, 153 feeds, 20 flags
 - `asns.json`: normalized ASN lists keyed by feed name
 - `asn_prefixes.json`: cached ASN → announced prefixes
 
@@ -43,12 +47,12 @@ curl https://ipblocklist-api.tn3w.dev/lookup/1.2.3.4
 
 ```json
 {
-    "ip": "1.2.3.4",
-    "max_score": 0.81,
-    "top_category": "spam",
-    "categories": ["malware", "spam"],
-    "flags": ["is_spammer", "is_phishing"],
-    "feeds": ["hphosts_psh", "hphosts_fsa"]
+  "ip": "1.2.3.4",
+  "max_score": 0.81,
+  "top_category": "spam",
+  "categories": ["malware", "spam"],
+  "flags": ["is_spammer", "is_phishing"],
+  "feeds": ["hphosts_psh", "hphosts_fsa"]
 }
 ```
 
@@ -149,16 +153,78 @@ Supported output forms:
 - IPv6 CIDR: `2001:db8::/32`
 - IPv6 range: `2001:db8::1-2001:db8::ff`
 
+### `intel.bin`
+
+Built by `builder/` (Rust). Source: `feeds-intel.json`. No magic header,
+SoA columnar layout, mmap-friendly. 128-byte header (little-endian
+throughout):
+
+| offset | size | field         |
+| ------ | ---- | ------------- |
+| 0      | u32  | version (4)   |
+| 4      | u32  | reserved      |
+| 8      | u64  | v4_count      |
+| 16     | u64  | v6_count      |
+| 24     | u64  | val_count     |
+| 32     | u64  | str_count     |
+| 40     | u64  | v4_starts_off |
+| 48     | u64  | v4_ends_off   |
+| 56     | u64  | v4_vals_off   |
+| 64     | u64  | v6_starts_off |
+| 72     | u64  | v6_ends_off   |
+| 80     | u64  | v6_vals_off   |
+| 88     | u64  | val_table_off |
+| 96     | u64  | str_index_off |
+| 104    | u64  | str_data_off  |
+| 112    | u64  | str_data_len  |
+
+Sections at the offsets named above:
+
+- `v4_starts`, `v4_ends`: `v4_count × u32`, sorted by start
+- `v4_vals`: `v4_count × u16` → index into value table
+- `v6_starts`, `v6_ends`: `v6_count × u128` (16 bytes each), sorted
+- `v6_vals`: `v6_count × u16`
+- value table: `val_count × {flags u32, provider_id u32, source_id u32, _pad u32}`
+- string index: `str_count × {offset u32, len u32}` into `str_data`
+- string data: raw UTF-8 bytes
+
+Flag bit positions (LSB first): `vpn, proxy, tor, malware, c2, scanner,
+brute_force, spammer, compromised, datacenter, cdn, anycast, crawler,
+bot, cloud, private_relay, anonymizer, mobile, isp, government`.
+
+Lookup: bisect on `*_starts` + scan backward while `max_end[i] ≥ ip`
+(precompute `max_end` as a prefix max of `*_ends` at load).
+
+Build:
+
+```bash
+cd builder
+cargo build --release
+PEERINGDB_API_KEY=... FEEDS_FILE=../feeds-intel.json OUT_FILE=../intel.bin \
+  ./target/release/builder update
+./target/release/builder check 1.2.3.4
+```
+
+`NO_CACHE=1` bypasses both the raw-HTTP and RIPEstat caches (CI sets
+this). Cache lives at `~/.cache/ipblocklist-builder/`.
+
+Python lookup: `lookup_intel.py` (mmap + numpy, ~100 ms load,
+~2 ms/lookup):
+
+```bash
+python3 lookup_intel.py 1.2.3.4 intel.bin
+```
+
 ### `asns.json`
 
 JSON object keyed by feed name.
 
 ```json
 {
-    "datacenter_asns": ["16509", "15169"],
-    "bgptools_c2_asns": ["14618"],
-    "bgptools_tor_asns": ["60729", "53667"],
-    "tor_static_asns": ["60729", "53667"]
+  "datacenter_asns": ["16509", "15169"],
+  "bgptools_c2_asns": ["14618"],
+  "bgptools_tor_asns": ["60729", "53667"],
+  "tor_static_asns": ["60729", "53667"]
 }
 ```
 
@@ -168,8 +234,8 @@ JSON object keyed by ASN.
 
 ```json
 {
-    "16509": ["192.0.2.0/24", "198.51.100.0/24"],
-    "15169": ["203.0.113.0/24"]
+  "16509": ["192.0.2.0/24", "198.51.100.0/24"],
+  "15169": ["203.0.113.0/24"]
 }
 ```
 

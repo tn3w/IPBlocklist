@@ -215,3 +215,4 @@ docs/data/
 # Markdown files except README.md
 *.md
 !README.md
+intel.bin

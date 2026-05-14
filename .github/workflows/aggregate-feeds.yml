@@ -7,7 +7,10 @@ on:
     branches: [master]
     paths:
       - 'feeds.json'
+      - 'feeds-intel.json'
       - 'aggregator.py'
+      - 'builder/**'
+      - 'cidr_minimizer/**'
   workflow_dispatch:
 
 jobs:
@@ -30,8 +33,20 @@ jobs:
         run: cargo build --release
         working-directory: cidr_minimizer
 
-      - name: Download and process feeds
+      - name: Build intel builder
+        run: cargo build --release
+        working-directory: builder
+
+      - name: Download and process feeds (legacy)
         run: python aggregator.py
+
+      - name: Build intel.bin
+        run: ./builder/target/release/builder update
+        env:
+          FEEDS_FILE: feeds-intel.json
+          OUT_FILE: intel.bin
+          NO_CACHE: '1'
+          PEERINGDB_API_KEY: ${{ secrets.PEERINGDB_API_KEY }}
 
       - name: Create Release
         env:
@@ -43,14 +58,16 @@ jobs:
           gh release create "$TAG_NAME" \
             blocklist.bin \
             blocklist.txt \
+            intel.bin \
             asns.json \
             asn_prefixes.json \
             --title "Blocklist Update - $TIMESTAMP" \
             --notes "Automated blocklist update from threat intelligence feeds.
 
           **Files:**
-          - \`blocklist.bin\` - Threat intelligence data (binary format)
+          - \`blocklist.bin\` - Legacy scored blocklist (binary format)
           - \`blocklist.txt\` - Scored and CIDR-minimized blocklist (text format)
+          - \`intel.bin\` - Threat-intel SoA database built from feeds-intel.json
           - \`asns.json\` - Normalized ASN lists keyed by feed name
           - \`asn_prefixes.json\` - Cached ASN to announced prefixes mapping
 
@@ -58,6 +75,7 @@ jobs:
           \`\`\`bash
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.bin
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.txt
+          wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/intel.bin
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/asns.json
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/asn_prefixes.json
           \`\`\`"
