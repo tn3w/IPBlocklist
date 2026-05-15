@@ -216,3 +216,4 @@ docs/data/
 *.md
 !README.md
 intel.bin
+request_cache/

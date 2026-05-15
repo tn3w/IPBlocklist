@@ -552,14 +552,6 @@
       "is_asn": true
     },
     {
-      "name": "bgptools_tor_asns",
-      "provider": "Tor",
-      "url": "https://bgp.tools/tags/tor.txt",
-      "regex": "^AS([0-9]+)",
-      "flags": ["tor", "anonymizer"],
-      "is_asn": true
-    },
-    {
       "name": "mullvad_static_asns",
       "provider": "Mullvad",
       "url": "",
@@ -1096,6 +1088,90 @@
       "regex": "\"asn\":\\s*([0-9]+)",
       "flags": ["datacenter"],
       "is_asn": true
+    },
+    {
+      "name": "stripe_webhooks",
+      "provider": "Stripe",
+      "url": "https://stripe.com/files/ips/ips_webhooks.json",
+      "regex": "\"([0-9.]+)\"",
+      "flags": ["cloud", "bot"]
+    },
+    {
+      "name": "atlassian",
+      "provider": "Atlassian",
+      "url": "https://ip-ranges.atlassian.com/",
+      "regex": "\"cidr\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "perplexity_bot",
+      "provider": "PerplexityBot",
+      "url": "https://www.perplexity.com/perplexitybot.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "perplexity_user",
+      "provider": "Perplexity User",
+      "url": "https://www.perplexity.com/perplexity-user.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["bot"]
+    },
+    {
+      "name": "telegram",
+      "provider": "Telegram",
+      "url": "https://core.telegram.org/resources/cidr.txt",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "stripe_armada_gator",
+      "provider": "Stripe",
+      "url": "https://stripe.com/files/ips/ips_armada_gator.json",
+      "regex": "\"([0-9.]+)\"",
+      "flags": ["cloud", "bot"]
+    },
+    {
+      "name": "uptimerobot_v4",
+      "provider": "UptimeRobot",
+      "url": "https://uptimerobot.com/inc/files/ips/IPv4.txt",
+      "regex": "^([0-9.]+)",
+      "flags": ["bot"]
+    },
+    {
+      "name": "uptimerobot_v6",
+      "provider": "UptimeRobot",
+      "url": "https://uptimerobot.com/inc/files/ips/IPv6.txt",
+      "regex": "^([0-9a-fA-F:]+)",
+      "flags": ["bot"]
+    },
+    {
+      "name": "pingdom_v4",
+      "provider": "Pingdom",
+      "url": "https://my.pingdom.com/probes/ipv4",
+      "regex": "^([0-9.]+)",
+      "flags": ["bot"]
+    },
+    {
+      "name": "pingdom_v6",
+      "provider": "Pingdom",
+      "url": "https://my.pingdom.com/probes/ipv6",
+      "regex": "^([0-9a-fA-F:]+)",
+      "flags": ["bot"]
+    },
+    {
+      "name": "statuscake",
+      "provider": "StatusCake",
+      "url": "https://app.statuscake.com/Workfloor/Locations.php?format=json",
+      "regex": "\"ipv?6?\":\"([0-9a-fA-F:.]+)\"",
+      "flags": ["bot"]
+    },
+    {
+      "name": "betterstack",
+      "provider": "Better Stack",
+      "url": "https://uptime.betterstack.com/ips.txt",
+      "regex": "^([0-9a-fA-F:.]+)",
+      "flags": ["bot"]
     }
   ]
 }

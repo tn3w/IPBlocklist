@@ -239,9 +239,9 @@ fn collect_ranges(tokens: &[String]) -> (Vec<(u32, u32)>, Vec<(u128, u128)>) {
     (v4, v6)
 }
 
-fn resolve_asns(asns: Vec<u32>) -> Vec<String> {
+fn resolve_asns_per(asns: Vec<u32>) -> Vec<(u32, Vec<String>)> {
     let asns = Mutex::new(asns);
-    let prefixes: Mutex<Vec<String>> = Mutex::new(Vec::new());
+    let out: Mutex<Vec<(u32, Vec<String>)>> = Mutex::new(Vec::new());
     std::thread::scope(|s| {
         for _ in 0..ASN_WORKERS {
             s.spawn(|| loop {
@@ -250,16 +250,16 @@ fn resolve_asns(asns: Vec<u32>) -> Vec<String> {
                     None => break,
                 };
                 match ripestat_cached(asn) {
-                    Ok(ps) => prefixes.lock().unwrap().extend(ps),
+                    Ok(ps) => out.lock().unwrap().push((asn, ps)),
                     Err(e) => eprintln!("  AS{asn}: {e}"),
                 }
             });
         }
     });
-    prefixes.into_inner().unwrap()
+    out.into_inner().unwrap()
 }
 
-pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<FeedResult> {
+pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult>> {
     let flags = flag_mask(&spec.flags, flag_names);
 
     let tokens = if spec.is_asn && !spec.asns.is_empty() {
@@ -275,32 +275,52 @@ pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<FeedResult> {
         return Err(format!("{}: 0 tokens extracted", spec.name).into());
     }
 
-    let (v4, v6) = if spec.is_asn {
-        let asn_set: HashSet<u32> = tokens.iter()
-            .filter_map(|t| normalize_asn(t)).collect();
-        if asn_set.is_empty() {
-            return Err(format!("{}: 0 valid ASNs", spec.name).into());
+    if !spec.is_asn {
+        let (v4, v6) = collect_ranges(&tokens);
+        if v4.is_empty() && v6.is_empty() {
+            return Err(format!("{}: 0 IPs after parsing", spec.name).into());
         }
-        let prefixes = resolve_asns(asn_set.into_iter().collect());
-        if prefixes.is_empty() {
-            return Err(format!("{}: 0 prefixes resolved", spec.name).into());
-        }
-        collect_ranges(&prefixes)
-    } else {
-        collect_ranges(&tokens)
-    };
-
-    if v4.is_empty() && v6.is_empty() {
-        return Err(format!("{}: 0 IPs after parsing", spec.name).into());
+        return Ok(vec![FeedResult {
+            name: spec.name.clone(),
+            provider: spec.provider.clone(),
+            flags, v4, v6,
+        }]);
     }
 
-    Ok(FeedResult {
-        name: spec.name.clone(),
-        provider: spec.provider.clone(),
-        flags,
-        v4,
-        v6,
-    })
+    let asn_set: HashSet<u32> = tokens.iter()
+        .filter_map(|t| normalize_asn(t)).collect();
+    if asn_set.is_empty() {
+        return Err(format!("{}: 0 valid ASNs", spec.name).into());
+    }
+    let per = resolve_asns_per(asn_set.into_iter().collect());
+    if per.is_empty() {
+        return Err(format!("{}: 0 prefixes resolved", spec.name).into());
+    }
+
+    let mut groups: HashMap<String, Vec<String>> = HashMap::new();
+    for (asn, prefixes) in per {
+        let provider = spec.provider.clone().unwrap_or_else(|| {
+            crate::asn_db::lookup_org(asn)
+                .map(crate::asn_db::normalize)
+                .unwrap_or_default()
+        });
+        groups.entry(provider).or_default().extend(prefixes);
+    }
+
+    let mut out = Vec::new();
+    for (provider, prefixes) in groups {
+        let (v4, v6) = collect_ranges(&prefixes);
+        if v4.is_empty() && v6.is_empty() { continue; }
+        out.push(FeedResult {
+            name: spec.name.clone(),
+            provider: if provider.is_empty() { None } else { Some(provider) },
+            flags, v4, v6,
+        });
+    }
+    if out.is_empty() {
+        return Err(format!("{}: 0 IPs after parsing", spec.name).into());
+    }
+    Ok(out)
 }
 
 pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
@@ -308,9 +328,13 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     let flag_names = ff.flags.clone();
     load_asn_cache();
 
+    if ff.feeds.iter().any(|f| f.is_asn && f.provider.is_none()) {
+        crate::asn_db::init()?;
+    }
+
     let queue: Mutex<Vec<(usize, FeedSpec)>> =
         Mutex::new(ff.feeds.iter().cloned().enumerate().rev().collect());
-    let results: Mutex<Vec<Option<std::result::Result<FeedResult, String>>>> =
+    let results: Mutex<Vec<Option<std::result::Result<Vec<FeedResult>, String>>>> =
         Mutex::new((0..ff.feeds.len()).map(|_| None).collect());
 
     std::thread::scope(|s| {
@@ -339,14 +363,18 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
                 eprintln!("  FAIL {}", e);
                 failures.push(e.clone());
             }
-            Ok(r) => {
-                let prov_id = b.intern(r.provider.as_deref().unwrap_or(""));
-                let src_id = b.intern(&r.name);
-                let val_id = b.value_id(r.flags, prov_id, src_id);
-                for &(s, e) in &r.v4 { b.push_v4(s, e, val_id); }
-                for &(s, e) in &r.v6 { b.push_v6(s, e, val_id); }
-                if verbose {
-                    println!("  {:<24} v4={:7} v6={:7}", r.name, r.v4.len(), r.v6.len());
+            Ok(parts) => {
+                for r in parts {
+                    let prov_id = b.intern(r.provider.as_deref().unwrap_or(""));
+                    let src_id = b.intern(&r.name);
+                    let val_id = b.value_id(r.flags, prov_id, src_id);
+                    for &(s, e) in &r.v4 { b.push_v4(s, e, val_id); }
+                    for &(s, e) in &r.v6 { b.push_v6(s, e, val_id); }
+                    if verbose {
+                        println!("  {:<24} provider={:<28} v4={:6} v6={:6}",
+                            r.name, r.provider.as_deref().unwrap_or(""),
+                            r.v4.len(), r.v6.len());
+                    }
                 }
             }
         }
