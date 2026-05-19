@@ -156,4 +156,4 @@ Lookup implementations for 25 languages live in `examples/`.
 
 # License
 
-[LICENSE](LICENSE)
+[Apache-2.0](LICENSE).
