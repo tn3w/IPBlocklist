@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>IPBlocklist — Threat Intelligence Lookup</title>
+        <title>IPBlocklist Threat Intelligence Lookup</title>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
             href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap"
@@ -611,13 +611,13 @@
 
         <main>
             <div class="search-section">
-                <div class="search-label">Enter an IP address or ASN (e.g. 8.8.8.8 or AS13335)</div>
+                <div class="search-label">Enter an IPv4 or IPv6 address (e.g. 1.1.1.1)</div>
                 <div class="search-box">
                     <input
                         class="search-input"
                         id="queryInput"
                         type="text"
-                        placeholder="1.1.1.1 or AS13335"
+                        placeholder="1.1.1.1 or 2606:4700::1"
                         spellcheck="false"
                         autocomplete="off"
                     />
@@ -634,21 +634,36 @@
             </div>
         </main>
 
-        <footer>IPBlocklist — Open-source threat intelligence aggregator</footer>
+        <footer>IPBlocklist Open-source threat intelligence aggregator</footer>
 
         <script>
-            const BLOCKLIST_URL = './data/blocklist.bin';
-            const FEEDS_URL =
-                'https://raw.githubusercontent.com/tn3w/IPBlocklist/master/feeds.json';
-            const ASNS_URL = './data/asns.json';
-            const ASN_CACHE_URL = './data/asn_prefixes.json';
-            const CACHE_NAME = 'ipblocklist-v2';
+            const INTEL_URL = './data/intel.bin';
+            const CACHE_NAME = 'ipblocklist-intel-v1';
             const CACHE_MAX_AGE = 6 * 60 * 60 * 1000;
 
-            let blocklist = null;
-            let feedsMeta = null;
-            let asnsData = null;
-            let asnCacheData = null;
+            const FLAGS = [
+                'vpn', 'proxy', 'tor', 'malware', 'c2', 'scanner',
+                'brute_force', 'spammer', 'compromised', 'datacenter',
+                'cdn', 'anycast', 'crawler', 'bot', 'cloud',
+                'private_relay', 'anonymizer', 'mobile', 'isp', 'government',
+            ];
+
+            const SEVERITY = {
+                malware: 95, c2: 95, compromised: 75, brute_force: 70,
+                spammer: 65, scanner: 55, tor: 45, bot: 40, anonymizer: 35,
+                vpn: 30, proxy: 25, datacenter: 15, private_relay: 15,
+                cloud: 10, crawler: 10, cdn: 5,
+                anycast: 0, mobile: 0, isp: 0, government: 0,
+            };
+
+            const LEVELS = [
+                [80, 'critical'],
+                [60, 'high'],
+                [35, 'medium'],
+                [15, 'low'],
+            ];
+
+            let db = null;
 
             const statusBar = document.getElementById('statusBar');
             const statusText = document.getElementById('statusText');
@@ -660,13 +675,6 @@
             function setStatus(state, text) {
                 statusBar.className = 'status-bar ' + state;
                 statusText.textContent = text;
-            }
-
-            function assetErrorMessage(path) {
-                return (
-                    `Missing ${path}. For local preview, download the latest ` +
-                    `release files into docs/data/.`
-                );
             }
 
             function formatBytes(n) {
@@ -694,8 +702,8 @@
                 if (cache) {
                     const hit = await cache.match(url);
                     if (hit) {
-                        const age =
-                            Date.now() - parseInt(hit.headers.get('x-cached-at') || '0', 10);
+                        const age = Date.now() -
+                            parseInt(hit.headers.get('x-cached-at') || '0', 10);
                         if (age < CACHE_MAX_AGE) {
                             onProgress(null, null, true, 0);
                             return hit.arrayBuffer();
@@ -705,9 +713,16 @@
                 }
 
                 const response = await fetch(url);
-                if (!response.ok) throw new Error(assetErrorMessage(url));
+                if (!response.ok) {
+                    throw new Error(
+                        `Missing ${url}. For local preview, download the ` +
+                        `latest intel.bin into docs/data/.`
+                    );
+                }
 
-                const total = parseInt(response.headers.get('content-length') || '0', 10);
+                const total = parseInt(
+                    response.headers.get('content-length') || '0', 10
+                );
                 const reader = response.body.getReader();
                 const chunks = [];
                 let received = 0;
@@ -718,7 +733,8 @@
                     if (done) break;
                     chunks.push(value);
                     received += value.length;
-                    const speed = received / Math.max((Date.now() - t0) / 1000, 0.001);
+                    const speed = received /
+                        Math.max((Date.now() - t0) / 1000, 0.001);
                     onProgress(received, total, false, speed);
                 }
 
@@ -730,159 +746,119 @@
                 }
 
                 if (cache) {
-                    await cache.put(
-                        url,
-                        new Response(bytes.buffer, {
-                            headers: {
-                                'content-type': 'application/octet-stream',
-                                'x-cached-at': String(Date.now()),
-                            },
-                        })
-                    );
+                    await cache.put(url, new Response(bytes.buffer, {
+                        headers: {
+                            'content-type': 'application/octet-stream',
+                            'x-cached-at': String(Date.now()),
+                        },
+                    }));
                 }
 
                 return bytes.buffer;
             }
 
-            async function fetchJsonCached(url, fallbackMessage) {
-                const cache = await openCache();
-                try {
-                    const response = await fetch(url);
-                    if (!response.ok) throw new Error(fallbackMessage || assetErrorMessage(url));
-                    const data = await response.json();
-                    if (cache) {
-                        await cache.put(
-                            url,
-                            new Response(JSON.stringify(data), {
-                                headers: {
-                                    'content-type': 'application/json',
-                                    'x-cached-at': String(Date.now()),
-                                },
-                            })
-                        );
-                    }
-                    return data;
-                } catch (networkError) {
-                    if (cache) {
-                        const hit = await cache.match(url);
-                        if (hit) return hit.json();
-                    }
-                    throw networkError;
-                }
+            function readU64(view, offset) {
+                const lo = view.getUint32(offset, true);
+                const hi = view.getUint32(offset + 4, true);
+                return Number(BigInt(hi) << 32n | BigInt(lo));
             }
 
-            function readVarint(view, pos) {
-                let result = 0n,
-                    shift = 0n;
-                while (true) {
-                    const byte = view.getUint8(pos.v++);
-                    result |= BigInt(byte & 0x7f) << shift;
-                    if (!(byte & 0x80)) return result;
-                    shift += 7n;
-                }
+            function readU128(view, offset) {
+                const a = view.getBigUint64(offset, true);
+                const b = view.getBigUint64(offset + 8, true);
+                return (b << 64n) | a;
             }
 
-            function parseBlocklist(buffer) {
+            function readStrings(bytes, indexOffset, count, dataOffset, dataLen) {
+                const view = new DataView(bytes.buffer);
+                const data = bytes.subarray(dataOffset, dataOffset + dataLen);
+                const decoder = new TextDecoder();
+                const out = new Array(count);
+                for (let i = 0; i < count; i++) {
+                    const o = indexOffset + i * 8;
+                    const off = view.getUint32(o, true);
+                    const len = view.getUint32(o + 4, true);
+                    out[i] = decoder.decode(data.subarray(off, off + len));
+                }
+                return out;
+            }
+
+            function parseIntel(buffer) {
                 const view = new DataView(buffer);
                 const bytes = new Uint8Array(buffer);
-                let pos = 0;
 
-                const magic = String.fromCharCode(...bytes.slice(0, 4));
-                if (magic !== 'IPBL') throw new Error('Invalid magic');
-                pos = 4;
-
-                const version = bytes[pos++];
-                if (version !== 2) throw new Error('Unsupported version');
-
-                const timestamp = view.getUint32(pos, true);
-                pos += 4;
-
-                const decoder = new TextDecoder();
-
-                const flagCount = bytes[pos++];
-                const flags = [];
-                for (let i = 0; i < flagCount; i++) {
-                    const len = bytes[pos++];
-                    flags.push(decoder.decode(bytes.slice(pos, pos + len)));
-                    pos += len;
+                const version = view.getUint32(0, true);
+                if (version !== 4) {
+                    throw new Error(`Unsupported intel.bin version ${version}`);
                 }
 
-                const catCount = bytes[pos++];
-                const categories = [];
-                for (let i = 0; i < catCount; i++) {
-                    const len = bytes[pos++];
-                    categories.push(decoder.decode(bytes.slice(pos, pos + len)));
-                    pos += len;
+                const v4n = readU64(view, 8);
+                const v6n = readU64(view, 16);
+                const valn = readU64(view, 24);
+                const strn = readU64(view, 32);
+                const v4s = readU64(view, 40);
+                const v4e = readU64(view, 48);
+                const v4v = readU64(view, 56);
+                const v6s = readU64(view, 64);
+                const v6e = readU64(view, 72);
+                const v6v = readU64(view, 80);
+                const vt = readU64(view, 88);
+                const si = readU64(view, 96);
+                const sd = readU64(view, 104);
+                const sl = readU64(view, 112);
+
+                const v4_starts = new Uint32Array(buffer, v4s, v4n);
+                const v4_ends = new Uint32Array(buffer, v4e, v4n);
+                const v4_vals = new Uint16Array(buffer, v4v, v4n);
+
+                const v4_max = new Uint32Array(v4n);
+                let acc4 = 0;
+                for (let i = 0; i < v4n; i++) {
+                    if (v4_ends[i] > acc4) acc4 = v4_ends[i];
+                    v4_max[i] = acc4;
                 }
 
-                const feedCount = view.getUint16(pos, true);
-                pos += 2;
-                const feeds = [];
+                const v6_starts = new Array(v6n);
+                const v6_ends = new Array(v6n);
+                for (let i = 0; i < v6n; i++) {
+                    v6_starts[i] = readU128(view, v6s + i * 16);
+                    v6_ends[i] = readU128(view, v6e + i * 16);
+                }
+                const v6_vals = new Uint16Array(buffer, v6v, v6n);
 
-                for (let i = 0; i < feedCount; i++) {
-                    const nameLen = bytes[pos++];
-                    const name = decoder.decode(bytes.slice(pos, pos + nameLen));
-                    pos += nameLen;
+                const v6_max = new Array(v6n);
+                let acc6 = 0n;
+                for (let i = 0; i < v6n; i++) {
+                    if (v6_ends[i] > acc6) acc6 = v6_ends[i];
+                    v6_max[i] = acc6;
+                }
 
-                    const baseScore = bytes[pos++];
-                    const confidence = bytes[pos++];
-                    const flagsMask = view.getUint32(pos, true);
-                    pos += 4;
-                    const categoriesMask = bytes[pos++];
-                    const rangeCount = view.getUint32(pos, true);
-                    pos += 4;
+                const values = new Uint32Array(buffer, vt, valn * 4);
+                const strings = readStrings(bytes, si, strn, sd, sl);
 
-                    const ipv4Starts = [];
-                    const ipv4Ends = [];
-                    const ipv6Starts = [];
-                    const ipv6Ends = [];
-                    let current = 0n;
-                    const posRef = { v: pos };
-
-                    for (let r = 0; r < rangeCount; r++) {
-                        current += readVarint(view, posRef);
-                        const size = readVarint(view, posRef);
-                        const end = current + size;
-
-                        if (end <= 0xffffffffn) {
-                            ipv4Starts.push(Number(current));
-                            ipv4Ends.push(Number(end));
-                        } else {
-                            ipv6Starts.push(current);
-                            ipv6Ends.push(end);
-                        }
+                const weights = {};
+                const total = Math.max(v4n, 1);
+                for (let f = 0; f < FLAGS.length; f++) {
+                    let count = 0;
+                    for (let i = 0; i < v4n; i++) {
+                        const bits = values[v4_vals[i] * 4];
+                        if (bits & (1 << f)) count++;
                     }
-
-                    pos = posRef.v;
-                    feeds.push({
-                        name,
-                        baseScore,
-                        confidence,
-                        flagsMask,
-                        categoriesMask,
-                        ipv4Starts,
-                        ipv4Ends,
-                        ipv6Starts,
-                        ipv6Ends,
-                    });
+                    const prevalence = Math.max(count / total, 1 / total);
+                    const rarity = Math.log2(1 / prevalence);
+                    weights[FLAGS[f]] = SEVERITY[FLAGS[f]] * (1 + rarity / 24);
                 }
 
-                return { timestamp, flags, categories, feeds };
+                return {
+                    v4_starts, v4_ends, v4_vals, v4_max,
+                    v6_starts, v6_ends, v6_vals, v6_max,
+                    values, strings, weights,
+                };
             }
 
             function ipv4ToInt(ip) {
                 const p = ip.split('.').map(Number);
                 return ((p[0] << 24) | (p[1] << 16) | (p[2] << 8) | p[3]) >>> 0;
-            }
-
-            function ipv6ToBigInt(ip) {
-                let full = expandIPv6(ip);
-                const parts = full.split(':');
-                let result = 0n;
-                for (const part of parts) {
-                    result = (result << 16n) | BigInt(parseInt(part, 16));
-                }
-                return result;
             }
 
             function expandIPv6(ip) {
@@ -892,13 +868,34 @@
                     const rightParts = right ? right.split(':') : [];
                     const missing = 8 - leftParts.length - rightParts.length;
                     const mid = Array(missing).fill('0000');
-                    const all = [...leftParts, ...mid, ...rightParts];
-                    return all.map((p) => p.padStart(4, '0')).join(':');
+                    return [...leftParts, ...mid, ...rightParts]
+                        .map((p) => p.padStart(4, '0'))
+                        .join(':');
                 }
-                return ip
-                    .split(':')
-                    .map((p) => p.padStart(4, '0'))
-                    .join(':');
+                return ip.split(':').map((p) => p.padStart(4, '0')).join(':');
+            }
+
+            function ipv6ToBigInt(ip) {
+                const parts = expandIPv6(ip).split(':');
+                let result = 0n;
+                for (const part of parts) {
+                    result = (result << 16n) | BigInt(parseInt(part, 16));
+                }
+                return result;
+            }
+
+            function intToIPv4(n) {
+                return `${(n >>> 24) & 0xff}.${(n >>> 16) & 0xff}.` +
+                    `${(n >>> 8) & 0xff}.${n & 0xff}`;
+            }
+
+            function bigIntToIPv6(n) {
+                const parts = [];
+                for (let i = 7; i >= 0; i--) {
+                    const shift = BigInt(i * 16);
+                    parts.push(Number((n >> shift) & 0xffffn).toString(16));
+                }
+                return parts.join(':');
             }
 
             function isIPv4(s) {
@@ -906,7 +903,8 @@
                 if (parts.length !== 4) return false;
                 return parts.every((p) => {
                     const n = Number(p);
-                    return Number.isInteger(n) && n >= 0 && n <= 255 && String(n) === p;
+                    return Number.isInteger(n) && n >= 0 && n <= 255 &&
+                        String(n) === p;
                 });
             }
 
@@ -914,17 +912,8 @@
                 return s.includes(':') && /^[0-9a-fA-F:]+$/.test(s);
             }
 
-            function isASN(s) {
-                return /^(AS|as)?\d+$/.test(s.trim());
-            }
-
-            function normalizeASN(s) {
-                return s.trim().replace(/^(AS|as)/i, '');
-            }
-
-            function bisectRight(arr, target) {
-                let lo = 0,
-                    hi = arr.length;
+            function bisectRightU32(arr, target) {
+                let lo = 0, hi = arr.length;
                 while (lo < hi) {
                     const mid = (lo + hi) >>> 1;
                     if (arr[mid] <= target) lo = mid + 1;
@@ -934,8 +923,7 @@
             }
 
             function bisectRightBig(arr, target) {
-                let lo = 0,
-                    hi = arr.length;
+                let lo = 0, hi = arr.length;
                 while (lo < hi) {
                     const mid = (lo + hi) >>> 1;
                     if (arr[mid] <= target) lo = mid + 1;
@@ -944,271 +932,170 @@
                 return lo;
             }
 
-            function lookupIP(ipStr) {
-                const matches = [];
-                const isV4 = isIPv4(ipStr);
+            function decodeValue(valId) {
+                const o = valId * 4;
+                return {
+                    flagsMask: db.values[o],
+                    provider: db.strings[db.values[o + 1]],
+                    source: db.strings[db.values[o + 2]],
+                };
+            }
 
-                if (isV4) {
-                    const target = ipv4ToInt(ipStr);
-                    for (const feed of blocklist.feeds) {
-                        const idx = bisectRight(feed.ipv4Starts, target) - 1;
-                        if (idx >= 0 && target <= feed.ipv4Ends[idx]) {
-                            matches.push(feed);
-                        }
-                    }
-                } else {
-                    const target = ipv6ToBigInt(ipStr);
-                    for (const feed of blocklist.feeds) {
-                        const idx = bisectRightBig(feed.ipv6Starts, target) - 1;
-                        if (idx >= 0 && target <= feed.ipv6Ends[idx]) {
-                            matches.push(feed);
-                        }
+            function flagsFromMask(mask) {
+                const out = [];
+                for (let i = 0; i < FLAGS.length; i++) {
+                    if (mask & (1 << i)) out.push(FLAGS[i]);
+                }
+                return out;
+            }
+
+            function lookupV4(ip) {
+                const hits = [];
+                let i = bisectRightU32(db.v4_starts, ip);
+                while (i > 0) {
+                    i--;
+                    if (db.v4_max[i] < ip) break;
+                    if (db.v4_ends[i] >= ip) {
+                        const v = decodeValue(db.v4_vals[i]);
+                        hits.push({
+                            start: intToIPv4(db.v4_starts[i]),
+                            end: intToIPv4(db.v4_ends[i]),
+                            ...v,
+                            flags: flagsFromMask(v.flagsMask),
+                        });
                     }
                 }
-
-                return matches;
+                return hits;
             }
 
-            function lookupASN(asnNumber) {
-                const results = [];
-                if (!asnsData) return results;
-
-                for (const [feedName, asnList] of Object.entries(asnsData)) {
-                    if (asnList.includes(asnNumber)) {
-                        results.push(feedName);
+            function lookupV6(ip) {
+                const hits = [];
+                let i = bisectRightBig(db.v6_starts, ip);
+                while (i > 0) {
+                    i--;
+                    if (db.v6_max[i] < ip) break;
+                    if (db.v6_ends[i] >= ip) {
+                        const v = decodeValue(db.v6_vals[i]);
+                        hits.push({
+                            start: bigIntToIPv6(db.v6_starts[i]),
+                            end: bigIntToIPv6(db.v6_ends[i]),
+                            ...v,
+                            flags: flagsFromMask(v.flagsMask),
+                        });
                     }
                 }
-                return results;
+                return hits;
             }
 
-            function lookupASNRanges(asnNumber) {
-                return asnCacheData?.[asnNumber] ?? [];
-            }
-
-            function parseCsvLine(line) {
-                const values = [];
-                let current = '';
-                let inQuotes = false;
-
-                for (let index = 0; index < line.length; index++) {
-                    const character = line[index];
-
-                    if (character === '"') {
-                        if (inQuotes && line[index + 1] === '"') {
-                            current += '"';
-                            index++;
-                            continue;
-                        }
-
-                        inQuotes = !inQuotes;
-                        continue;
-                    }
-
-                    if (character === ',' && !inQuotes) {
-                        values.push(current.trim());
-                        current = '';
-                        continue;
-                    }
-
-                    current += character;
+            function computeScore(hits) {
+                if (hits.length === 0) {
+                    return { score: 0, level: 'unknown', reasons: [], sources: 0 };
                 }
-
-                values.push(current.trim());
-                return values;
-            }
-
-            function cleanCsvValue(value) {
-                return value.replace(/^"+|"+$/g, '').trim();
-            }
-
-            function isAsnField(value) {
-                return /^(?:AS)?\d+$/i.test(value);
-            }
-
-            function isTextualAsnName(value) {
-                if (!value) return false;
-                if (isAsnField(value)) return false;
-                if (/^[A-Z]{2}$/.test(value)) return false;
-                if (/^\d+$/.test(value)) return false;
-                if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-                if (/^\d{8}$/.test(value)) return false;
-                if (/^[0-9a-fA-F:.]+(?:\/\d+)?$/.test(value)) return false;
-                return true;
-            }
-
-            function lookupASNFromPrefixes(ipStr) {
-                if (!asnCacheData) return null;
-                const v4 = isIPv4(ipStr);
-                if (!v4 && !isIPv6(ipStr)) return null;
-
-                const target = v4 ? ipv4ToInt(ipStr) : ipv6ToBigInt(ipStr);
-
-                for (const [asn, prefixes] of Object.entries(asnCacheData)) {
-                    for (const cidr of prefixes) {
-                        const slash = cidr.indexOf('/');
-                        if (slash < 0) continue;
-                        const addr = cidr.substring(0, slash);
-                        const bits = parseInt(cidr.substring(slash + 1));
-
-                        if (v4 && isIPv4(addr)) {
-                            const base = ipv4ToInt(addr);
-                            const hb = 32 - bits;
-                            if (hb > 31) continue;
-                            const mask = (-1 << hb) >>> 0;
-                            const start = (base & mask) >>> 0;
-                            const end = (start | (~mask >>> 0)) >>> 0;
-                            if (target >= start && target <= end) {
-                                return { asn, name: '' };
-                            }
-                        } else if (!v4 && addr.includes(':')) {
-                            const base = ipv6ToBigInt(addr);
-                            const shift = 128n - BigInt(bits);
-                            const size = shift >= 128n ? 0n : (1n << shift) - 1n;
-                            const mask = ((1n << 128n) - 1n) ^ size;
-                            const start = base & mask;
-                            const end = start | size;
-                            if (target >= start && target <= end) {
-                                return { asn, name: '' };
-                            }
-                        }
+                const flagValue = {};
+                for (const hit of hits) {
+                    for (const flag of hit.flags) {
+                        const value = db.weights[flag];
+                        if (value > (flagValue[flag] || 0)) flagValue[flag] = value;
                     }
                 }
-                return null;
+                const entries = Object.entries(flagValue);
+                if (entries.length === 0) {
+                    return { score: 0, level: 'unknown', reasons: [], sources: 0 };
+                }
+                entries.sort((a, b) => b[1] - a[1]);
+                const top = entries[0][1];
+                const extras = entries.slice(1).reduce((s, [, v]) => s + v, 0) * 0.15;
+                const sources = new Set(hits.map((h) => `${h.provider}|${h.source}`));
+                const boost = 1 + 0.08 * Math.log2(sources.size + 1);
+                const score = Math.min(100, (top + extras) * boost);
+                return {
+                    score: Math.round(score * 10) / 10,
+                    level: levelFor(score),
+                    reasons: entries.slice(0, 5).map(([f]) => f),
+                    sources: sources.size,
+                };
+            }
+
+            function levelFor(score) {
+                for (const [t, name] of LEVELS) {
+                    if (score >= t) return name;
+                }
+                return 'minimal';
             }
 
             function scoreColor(score) {
-                if (score >= 0.7) return 'var(--danger)';
-                if (score >= 0.4) return 'var(--warn)';
-                if (score >= 0.1) return 'var(--info)';
+                if (score >= 80) return 'var(--danger)';
+                if (score >= 60) return 'var(--danger)';
+                if (score >= 35) return 'var(--warn)';
+                if (score >= 15) return 'var(--info)';
                 return 'var(--safe)';
             }
 
             function verdictClass(score) {
-                if (score >= 0.7) return 'verdict-high';
-                if (score >= 0.4) return 'verdict-medium';
-                if (score >= 0.1) return 'verdict-low';
+                if (score >= 60) return 'verdict-high';
+                if (score >= 35) return 'verdict-medium';
+                if (score >= 15) return 'verdict-low';
                 return 'verdict-clean';
             }
 
-            function verdictLabel(score) {
-                if (score >= 0.7) return 'High Risk';
-                if (score >= 0.4) return 'Medium Risk';
-                if (score >= 0.1) return 'Low Risk';
-                return 'Clean';
-            }
-
-            function getFeedMeta(name) {
-                if (!feedsMeta) return null;
-                return feedsMeta.find((f) => f.name === name) || null;
-            }
-
-            function getFeedFlags(feed) {
-                return blocklist.flags.filter((_, i) => feed.flagsMask & (1 << i));
-            }
-
-            function getFeedCats(feed) {
-                return blocklist.categories.filter((_, i) => feed.categoriesMask & (1 << i));
-            }
-
-            function feedScore(feed) {
-                return (feed.baseScore / 200) * (feed.confidence / 200);
+            function verdictLabel(level) {
+                if (level === 'unknown') return 'Clean';
+                return level.charAt(0).toUpperCase() + level.slice(1);
             }
 
             function escapeHtml(text) {
                 const div = document.createElement('div');
-                div.textContent = text;
+                div.textContent = text == null ? '' : String(text);
                 return div.innerHTML;
             }
 
-            function renderFeedTooltip(feed) {
-                const meta = getFeedMeta(feed.name);
-                if (!meta) return '';
-
-                return `<div class="tooltip-card">
-    <div class="tt-name">${escapeHtml(meta.name)}</div>
-    <div class="tt-desc">
-      ${escapeHtml(meta.description || 'No description')}
-    </div>
-    <div class="tt-row">
-      <span>base_score: <strong>
-        ${meta.base_score}
-      </strong></span>
-      <span>confidence: <strong>
-        ${meta.confidence}
-      </strong></span>
-    </div>
-    ${
-        meta.provider_name
-            ? `<div class="tt-row">
-      <span>provider: <strong>
-        ${escapeHtml(meta.provider_name)}
-      </strong></span>
-    </div>`
-            : ''
-    }
-    <div class="tt-row" style="margin-top:0.3rem">
-      <span>flags: <strong>
-        ${(meta.flags || []).join(', ') || 'none'}
-      </strong></span>
-    </div>
-    <div class="tt-row">
-      <span>categories: <strong>
-        ${(meta.categories || []).join(', ') || 'none'}
-      </strong></span>
-    </div>
-  </div>`;
-            }
-
-            function renderIPResults(ipStr, matches, asnInfo, asnMatches) {
+            function renderResults(ipStr, hits) {
+                const score = computeScore(hits);
                 const allFlags = new Set();
-                const allCats = new Set();
-                const catCounts = {};
-                let maxScore = 0;
-                let totalScore = 0;
-
-                for (const feed of matches) {
-                    const s = feedScore(feed);
-                    totalScore += s;
-                    if (s > maxScore) maxScore = s;
-                    for (const f of getFeedFlags(feed)) allFlags.add(f);
-                    for (const c of getFeedCats(feed)) {
-                        allCats.add(c);
-                        catCounts[c] = (catCounts[c] || 0) + 1;
-                    }
+                const providers = new Set();
+                const sources = new Set();
+                for (const hit of hits) {
+                    for (const flag of hit.flags) allFlags.add(flag);
+                    if (hit.provider) providers.add(hit.provider);
+                    sources.add(hit.source);
                 }
-
-                const topCategory =
-                    Object.entries(catCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'none';
+                const providerList = [...providers];
+                const torIndex = providerList.findIndex(
+                    (p) => p.toLowerCase() === 'tor'
+                );
+                if (torIndex > 0) {
+                    providerList.splice(torIndex, 1);
+                    providerList.unshift('Tor');
+                }
+                const topProvider = providerList[0] || '';
 
                 let html = `<div class="result-header">
     <span class="result-ip">${escapeHtml(ipStr)}</span>
-    <span class="result-verdict ${verdictClass(maxScore)}">
-      ${verdictLabel(maxScore)}
+    <span class="result-verdict ${verdictClass(score.score)}">
+      ${escapeHtml(verdictLabel(score.level))}
     </span>
   </div>`;
 
                 html += `<div class="stats-row">
     <div class="stat-card">
-      <div class="stat-label">Detections</div>
-      <div class="stat-value">${matches.length}<span
-        style="color:var(--text-muted);font-size:0.75em">
-        / ${blocklist.feeds.length}</span></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Max Score</div>
-      <div class="stat-value"
-        style="color:${scoreColor(maxScore)}">
-        ${maxScore.toFixed(2)}
+      <div class="stat-label">Score</div>
+      <div class="stat-value" style="color:${scoreColor(score.score)}">
+        ${score.score.toFixed(1)}<span
+          style="color:var(--text-muted);font-size:0.6em"> / 100</span>
       </div>
       <div class="score-bar-outer">
         <div class="score-bar-inner"
-          style="width:${maxScore * 100}%;
-          background:${scoreColor(maxScore)}"></div>
+          style="width:${score.score}%;background:${scoreColor(score.score)}">
+        </div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-label">Top Category</div>
-      <div class="stat-value">${topCategory}</div>
+      <div class="stat-label">Detections</div>
+      <div class="stat-value">${hits.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Sources</div>
+      <div class="stat-value">${sources.size}</div>
     </div>
     <div class="stat-card">
       <div class="stat-label">Flags</div>
@@ -1216,177 +1103,96 @@
     </div>
   </div>`;
 
-                if (allCats.size > 0) {
-                    html += `<div class="section-title">Categories</div>
-    <div class="tags">
-      ${[...allCats]
-          .map(
-              (c) => `<span class="tag tag-cat">
-        ${c}
-        <span style="opacity:0.6;margin-left:0.2rem">
-          ×${catCounts[c]}</span>
-      </span>`
-          )
-          .join('')}
+                if (topProvider) {
+                    html += `<div class="section-title">Provider</div>
+    <div class="stat-card" style="margin-bottom:1.5rem">
+      <div class="stat-value">${escapeHtml(topProvider)}</div>
+      ${providerList.length > 1
+          ? `<div style="color:var(--text-dim);font-size:0.8rem;
+              margin-top:0.3rem;font-family:var(--mono)">
+              + ${providerList.slice(1).map(escapeHtml).join(', ')}
+            </div>`
+          : ''}
     </div>`;
                 }
 
                 if (allFlags.size > 0) {
                     html += `<div class="section-title">Flags</div>
     <div class="tags">
-      ${[...allFlags].map((f) => `<span class="tag tag-flag">${f}</span>`).join('')}
+      ${[...allFlags]
+          .map((f) => `<span class="tag tag-flag">${escapeHtml(f)}</span>`)
+          .join('')}
     </div>`;
                 }
 
-                if (matches.length > 0) {
-                    const sorted = [...matches].sort((a, b) => feedScore(b) - feedScore(a));
-                    html += `<div class="section-title">
-      Feed Detections
-    </div>
+                if (score.reasons.length > 0) {
+                    html += `<div class="section-title">Top Reasons</div>
+    <div class="tags">
+      ${score.reasons
+          .map((f) => `<span class="tag tag-cat">${escapeHtml(f)}</span>`)
+          .join('')}
+    </div>`;
+                }
+
+                if (hits.length > 0) {
+                    const sorted = [...hits].sort((a, b) => {
+                        const sa = Math.max(...a.flags.map((f) => db.weights[f] || 0), 0);
+                        const sb = Math.max(...b.flags.map((f) => db.weights[f] || 0), 0);
+                        return sb - sa;
+                    });
+                    html += `<div class="section-title">Matches</div>
     <div class="feed-list">
-      ${sorted
-          .map((feed) => {
-              const s = feedScore(feed);
-              const flags = getFeedFlags(feed);
-              const cats = getFeedCats(feed);
-              return `<div class="feed-item">
+      ${sorted.map((hit) => {
+          const hitMax = Math.max(
+              ...hit.flags.map((f) => db.weights[f] || 0), 0
+          );
+          return `<div class="feed-item">
           <div class="feed-dot"
-            style="background:${scoreColor(s)}"></div>
-          <div class="feed-name">${escapeHtml(feed.name)}</div>
-          <div class="feed-score"
-            style="color:${scoreColor(s)}">
-            ${s.toFixed(2)}
+            style="background:${scoreColor(hitMax)}"></div>
+          <div class="feed-name">
+            ${escapeHtml(hit.source)}
+            ${hit.provider
+                ? `<span style="color:var(--text-dim);
+                    font-size:0.78em;margin-left:0.4rem">
+                    ${escapeHtml(hit.provider)}
+                  </span>`
+                : ''}
+          </div>
+          <div class="feed-score" style="color:${scoreColor(hitMax)}">
+            ${hitMax.toFixed(0)}
           </div>
           <div class="feed-tags">
-            ${cats.map((c) => `<span class="feed-tag tag-cat">${c}</span>`).join('')}
-            ${flags
-                .slice(0, 3)
-                .map((f) => `<span class="feed-tag tag-flag">${f}</span>`)
+            ${hit.flags.slice(0, 4)
+                .map((f) => `<span class="feed-tag tag-flag">${escapeHtml(f)}</span>`)
                 .join('')}
-            ${
-                flags.length > 3
-                    ? `<span class="feed-tag tag-flag">
-                  +${flags.length - 3}
-                </span>`
-                    : ''
-            }
+            ${hit.flags.length > 4
+                ? `<span class="feed-tag tag-flag">
+                    +${hit.flags.length - 4}
+                  </span>`
+                : ''}
           </div>
-          ${renderFeedTooltip(feed)}
+          <div class="tooltip-card">
+            <div class="tt-name">${escapeHtml(hit.source)}</div>
+            ${hit.provider
+                ? `<div class="tt-desc">${escapeHtml(hit.provider)}</div>`
+                : ''}
+            <div class="tt-row">
+              <span>range: <strong>
+                ${escapeHtml(hit.start)} – ${escapeHtml(hit.end)}
+              </strong></span>
+            </div>
+            <div class="tt-row" style="margin-top:0.3rem">
+              <span>flags: <strong>
+                ${hit.flags.join(', ') || 'none'}
+              </strong></span>
+            </div>
+          </div>
         </div>`;
-          })
-          .join('')}
+      }).join('')}
     </div>`;
                 } else {
                     html += `<div class="no-matches">
-      No feed detections for this IP
-    </div>`;
-                }
-
-                if (asnInfo) {
-                    html += `<div class="section-title">
-      ASN Information
-    </div>`;
-                    html += `<div class="stat-card" style="margin-bottom:1rem">
-      <div class="stat-label">
-        Autonomous System
-      </div>
-      <div class="stat-value">
-        AS${escapeHtml(asnInfo.asn)}
-        ${
-            asnInfo.name
-                ? `<span style="color:var(--text-dim);
-              font-size:0.75em;margin-left:0.5rem">
-              ${escapeHtml(asnInfo.name)}
-            </span>`
-                : ''
-        }
-      </div>
-    </div>`;
-
-                    if (asnMatches.length > 0) {
-                        html += `<div class="section-title">
-        ASN Feed Matches
-      </div>
-      <div class="feed-list">
-        ${asnMatches
-            .map(
-                (name) => `<div class="feed-item">
-          <div class="feed-dot"
-            style="background:var(--accent)"></div>
-          <div class="feed-name">${escapeHtml(name)}</div>
-        </div>`
-            )
-            .join('')}
-      </div>`;
-                    }
-
-                    const asnRanges = lookupASNRanges(asnInfo.asn);
-                    if (asnRanges.length > 0) {
-                        html += `<div class="section-title">
-        Announced Prefixes (${asnRanges.length})
-      </div>
-      <div class="prefix-list">
-        ${asnRanges.map((p) => `<span class="prefix-tag">${escapeHtml(p)}</span>`).join('')}
-      </div>`;
-                    }
-                }
-
-                return html;
-            }
-
-            function renderASNResults(asnNumber, asnMatches) {
-                let html = `<div class="result-header">
-    <span class="result-ip">AS${escapeHtml(asnNumber)}</span>
-    <span class="result-verdict ${asnMatches.length > 0 ? 'verdict-medium' : 'verdict-clean'}">
-      ${
-          asnMatches.length > 0
-              ? `${asnMatches.length} Match${asnMatches.length > 1 ? 'es' : ''}`
-              : 'Not Listed'
-      }
-    </span>
-  </div>`;
-
-                html += `<div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-label">Feed Matches</div>
-      <div class="stat-value">${asnMatches.length}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Total ASN Feeds</div>
-      <div class="stat-value">
-        ${asnsData ? Object.keys(asnsData).length : 0}
-      </div>
-    </div>
-  </div>`;
-
-                if (asnMatches.length > 0) {
-                    html += `<div class="section-title">
-      ASN Feed Detections
-    </div>
-    <div class="feed-list">
-      ${asnMatches
-          .map(
-              (name) => `<div class="feed-item">
-        <div class="feed-dot"
-          style="background:var(--accent)"></div>
-        <div class="feed-name">${escapeHtml(name)}</div>
-      </div>`
-          )
-          .join('')}
-    </div>`;
-                } else {
-                    html += `<div class="no-matches">
-      This ASN is not listed in any feed
-    </div>`;
-                }
-
-                const asnRanges = lookupASNRanges(asnNumber);
-                if (asnRanges.length > 0) {
-                    html += `<div class="section-title">
-      Announced Prefixes (${asnRanges.length})
-    </div>
-    <div class="prefix-list">
-      ${asnRanges.map((p) => `<span class="prefix-tag">${escapeHtml(p)}</span>`).join('')}
+      No detections this IP is not flagged by any source
     </div>`;
                 }
 
@@ -1403,34 +1209,23 @@
                 resultsDiv.classList.add('visible');
 
                 try {
-                    if (isASN(query)) {
-                        const asnNumber = normalizeASN(query);
-                        const asnMatches = lookupASN(asnNumber);
-                        resultContent.innerHTML = renderASNResults(asnNumber, asnMatches);
-                    } else if (isIPv4(query) || isIPv6(query)) {
-                        const matches = lookupIP(query);
-
-                        const asnInfo = lookupASNFromPrefixes(query);
-
-                        let asnMatches = [];
-                        if (asnInfo) {
-                            asnMatches = lookupASN(asnInfo.asn);
-                        }
-
-                        resultContent.innerHTML = renderIPResults(
-                            query,
-                            matches,
-                            asnInfo,
-                            asnMatches
-                        );
+                    let hits;
+                    if (isIPv4(query)) {
+                        hits = lookupV4(ipv4ToInt(query));
+                    } else if (isIPv6(query)) {
+                        hits = lookupV6(ipv6ToBigInt(query));
                     } else {
                         resultContent.innerHTML = `<div class="no-matches">
-          Invalid input — enter an IPv4/IPv6 address
-          or ASN (e.g. AS13335)
+          Invalid input enter an IPv4 or IPv6 address
         </div>`;
+                        lookupBtn.disabled = false;
+                        lookupBtn.textContent = 'Lookup';
+                        return;
                     }
+                    resultContent.innerHTML = renderResults(query, hits);
                 } catch (error) {
-                    resultContent.innerHTML = `<div class="no-matches" style="color:var(--danger)">
+                    resultContent.innerHTML = `<div class="no-matches"
+        style="color:var(--danger)">
         Error: ${escapeHtml(error.message)}
       </div>`;
                 }
@@ -1446,51 +1241,43 @@
 
             async function init() {
                 try {
-                    setStatus('loading', 'Loading blocklist…');
-
-                    const jsonPromise = Promise.all([
-                        fetchJsonCached(FEEDS_URL, 'Failed to load feeds metadata.'),
-                        fetchJsonCached(ASNS_URL),
-                        fetchJsonCached(ASN_CACHE_URL),
-                    ]);
-
+                    setStatus('loading', 'Loading intel.bin…');
                     const buffer = await fetchBinaryWithProgress(
-                        BLOCKLIST_URL,
+                        INTEL_URL,
                         (received, total, fromCache, speed) => {
                             if (fromCache) {
-                                setStatus('loading', 'Loading blocklist from cache…');
+                                setStatus('loading', 'Loading intel.bin from cache…');
                                 return;
                             }
                             const knownTotal = total > 0 && received <= total;
                             const pct = knownTotal
                                 ? ` ${Math.round((received / total) * 100)}%`
                                 : '';
-                            const size =
-                                formatBytes(received) +
+                            const size = formatBytes(received) +
                                 (knownTotal ? ` / ${formatBytes(total)}` : '');
-                            const spd = speed > 0 ? ` · ${formatSpeed(speed)}` : '';
-                            setStatus('loading', `Downloading blocklist…${pct} (${size}${spd})`);
+                            const spd = speed > 0
+                                ? ` · ${formatSpeed(speed)}`
+                                : '';
+                            setStatus(
+                                'loading',
+                                `Downloading intel.bin…${pct} (${size}${spd})`
+                            );
                         }
                     );
 
-                    const [loadedFeedsMeta, loadedAsnsData, loadedAsnCacheData] = await jsonPromise;
+                    setStatus('loading', 'Parsing intel.bin…');
+                    db = parseIntel(buffer);
 
-                    setStatus('loading', 'Parsing blocklist…');
-                    blocklist = parseBlocklist(buffer);
-                    feedsMeta = loadedFeedsMeta;
-                    asnsData = loadedAsnsData;
-                    asnCacheData = loadedAsnCacheData;
-
-                    const date = new Date(blocklist.timestamp * 1000);
                     setStatus(
                         'ready',
-                        `Ready — ${blocklist.feeds.length} feeds, ` +
-                            `updated ${date.toLocaleDateString()}`
+                        `Ready ${db.v4_starts.length.toLocaleString()} v4 + ` +
+                            `${db.v6_starts.length.toLocaleString()} v6 ranges, ` +
+                            `${db.strings.length.toLocaleString()} strings`
                     );
                     lookupBtn.disabled = false;
                     queryInput.focus();
                 } catch (error) {
-                    setStatus('error', error.message || 'Failed to load data');
+                    setStatus('error', error.message || 'Failed to load intel.bin');
                 }
             }
 

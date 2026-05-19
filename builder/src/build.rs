@@ -1,19 +1,17 @@
 use crate::db::{Builder, Result};
 use serde::Deserialize;
+use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::Read;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::sync::OnceLock;
-use sha2::{Digest, Sha256};
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
     AppleWebKit/537.36 (KHTML, like Gecko) \
     Chrome/131.0.0.0 Safari/537.36";
 const WORKERS: usize = 8;
-const ASN_WORKERS: usize = 16;
 
 #[derive(Deserialize)]
 pub struct FeedsFile {
@@ -36,32 +34,6 @@ pub struct FeedSpec {
 }
 
 const REQUEST_CACHE_DIR: &str = "request_cache";
-
-static ASN_CACHE: OnceLock<Mutex<HashMap<u32, Vec<String>>>> = OnceLock::new();
-
-fn asn_cache_path() -> PathBuf {
-    if let Some(p) = std::env::var_os("ASN_CACHE_FILE") {
-        return PathBuf::from(p);
-    }
-    PathBuf::from("asn_prefixes.json")
-}
-
-fn load_asn_cache() {
-    let map = fs::read(asn_cache_path()).ok()
-        .and_then(|b| serde_json::from_slice::<HashMap<String, Vec<String>>>(&b).ok())
-        .map(|m| m.into_iter()
-            .filter_map(|(k, v)| k.parse::<u32>().ok().map(|n| (n, v))).collect())
-        .unwrap_or_default();
-    let _ = ASN_CACHE.set(Mutex::new(map));
-}
-
-fn save_asn_cache() -> Result<()> {
-    let guard = ASN_CACHE.get().ok_or("asn cache uninit")?.lock().unwrap();
-    let m: HashMap<String, &Vec<String>> = guard.iter()
-        .map(|(k, v)| (k.to_string(), v)).collect();
-    fs::write(asn_cache_path(), serde_json::to_vec(&m)?)?;
-    Ok(())
-}
 
 fn request_cache_path(url: &str) -> PathBuf {
     let hex: String = Sha256::digest(url.as_bytes())
@@ -170,46 +142,6 @@ fn normalize_asn(s: &str) -> Option<u32> {
     t.parse::<u32>().ok()
 }
 
-fn ripestat_cached(asn: u32) -> Result<Vec<String>> {
-    if let Some(cache) = ASN_CACHE.get() {
-        if let Some(v) = cache.lock().unwrap().get(&asn) {
-            return Ok(v.clone());
-        }
-    }
-    let v = ripestat_prefixes(asn)?;
-    if let Some(cache) = ASN_CACHE.get() {
-        cache.lock().unwrap().insert(asn, v.clone());
-    }
-    Ok(v)
-}
-
-fn ripestat_prefixes(asn: u32) -> Result<Vec<String>> {
-    let url = format!(
-        "https://stat.ripe.net/data/announced-prefixes/data.json?resource=AS{asn}"
-    );
-    let mut last_err: Option<String> = None;
-    for attempt in 1..=4 {
-        match http_get(&url).and_then(|body| {
-            let v: serde_json::Value = serde_json::from_slice(&body)?;
-            if v.get("status").and_then(|s| s.as_str()) != Some("ok") {
-                return Err(format!("RIPEstat AS{asn}: bad status").into());
-            }
-            let arr = v.pointer("/data/prefixes").and_then(|x| x.as_array())
-                .ok_or("RIPEstat: no prefixes array")?;
-            Ok(arr.iter()
-                .filter_map(|p| p.get("prefix").and_then(|x| x.as_str()).map(String::from))
-                .collect::<Vec<_>>())
-        }) {
-            Ok(v) => return Ok(v),
-            Err(e) => {
-                last_err = Some(e.to_string());
-                std::thread::sleep(std::time::Duration::from_millis(500 * attempt));
-            }
-        }
-    }
-    Err(last_err.unwrap_or_else(|| "ripestat: unknown error".into()).into())
-}
-
 fn extract_tokens(body: &[u8], regex: &str) -> Result<Vec<String>> {
     let text = String::from_utf8_lossy(body);
     let re = regex::Regex::new(&format!("(?m){regex}"))
@@ -239,24 +171,13 @@ fn collect_ranges(tokens: &[String]) -> (Vec<(u32, u32)>, Vec<(u128, u128)>) {
     (v4, v6)
 }
 
-fn resolve_asns_per(asns: Vec<u32>) -> Vec<(u32, Vec<String>)> {
-    let asns = Mutex::new(asns);
-    let out: Mutex<Vec<(u32, Vec<String>)>> = Mutex::new(Vec::new());
-    std::thread::scope(|s| {
-        for _ in 0..ASN_WORKERS {
-            s.spawn(|| loop {
-                let asn = match asns.lock().unwrap().pop() {
-                    Some(a) => a,
-                    None => break,
-                };
-                match ripestat_cached(asn) {
-                    Ok(ps) => out.lock().unwrap().push((asn, ps)),
-                    Err(e) => eprintln!("  AS{asn}: {e}"),
-                }
-            });
-        }
-    });
-    out.into_inner().unwrap()
+fn provider_for(spec: &FeedSpec, asn: u32) -> String {
+    if let Some(p) = &spec.provider {
+        return p.clone();
+    }
+    crate::asn_db::lookup_org(asn)
+        .map(|s| crate::asn_db::normalize(&s))
+        .unwrap_or_default()
 }
 
 pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult>> {
@@ -292,24 +213,18 @@ pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult
     if asn_set.is_empty() {
         return Err(format!("{}: 0 valid ASNs", spec.name).into());
     }
-    let per = resolve_asns_per(asn_set.into_iter().collect());
-    if per.is_empty() {
-        return Err(format!("{}: 0 prefixes resolved", spec.name).into());
-    }
 
-    let mut groups: HashMap<String, Vec<String>> = HashMap::new();
-    for (asn, prefixes) in per {
-        let provider = spec.provider.clone().unwrap_or_else(|| {
-            crate::asn_db::lookup_org(asn)
-                .map(crate::asn_db::normalize)
-                .unwrap_or_default()
-        });
-        groups.entry(provider).or_default().extend(prefixes);
+    let mut groups: HashMap<String, (Vec<(u32, u32)>, Vec<(u128, u128)>)> = HashMap::new();
+    for asn in asn_set {
+        let provider = provider_for(spec, asn);
+        let (v4, v6) = crate::asn_db::prefixes_for(asn);
+        let entry = groups.entry(provider).or_default();
+        entry.0.extend(v4);
+        entry.1.extend(v6);
     }
 
     let mut out = Vec::new();
-    for (provider, prefixes) in groups {
-        let (v4, v6) = collect_ranges(&prefixes);
+    for (provider, (v4, v6)) in groups {
         if v4.is_empty() && v6.is_empty() { continue; }
         out.push(FeedResult {
             name: spec.name.clone(),
@@ -326,9 +241,8 @@ pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult
 pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     let ff: FeedsFile = serde_json::from_slice(&fs::read(feeds_file)?)?;
     let flag_names = ff.flags.clone();
-    load_asn_cache();
 
-    if ff.feeds.iter().any(|f| f.is_asn && f.provider.is_none()) {
+    if ff.feeds.iter().any(|f| f.is_asn) {
         crate::asn_db::init()?;
     }
 
@@ -381,7 +295,6 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     }
 
     if !failures.is_empty() {
-        let _ = save_asn_cache();
         return Err(format!("{} feed(s) failed:\n  {}",
             failures.len(), failures.join("\n  ")).into());
     }
@@ -394,6 +307,5 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
         println!("values: {} | strings: {}", b.values.len(), b.strings.len());
     }
     b.write(out)?;
-    save_asn_cache()?;
     Ok(())
 }

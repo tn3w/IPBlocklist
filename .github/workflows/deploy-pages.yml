@@ -42,9 +42,7 @@ jobs:
           gh release download \
             --repo tn3w/IPBlocklist \
             --dir docs/data \
-            --pattern blocklist.bin \
-            --pattern asns.json \
-            --pattern asn_prefixes.json
+            --pattern intel.bin
 
       - uses: actions/configure-pages@v5
 

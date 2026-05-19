@@ -2,25 +2,10 @@
 
 [![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
 [![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
-[![Legacy feeds](https://img.shields.io/badge/legacy-163_feeds-gray)](feeds.json)
 [![License](https://img.shields.io/badge/license-see_LICENSE-lightgrey)](LICENSE)
 
-Aggregates IP/ASN threat intelligence into release artifacts.
-
-```
-intel.bin: 164 sources, 20 flags, ~30 MB mmap
-0 to 100 maliciousness scoring (consumer-side)
-```
-
-## Artifacts
-
-| file                | role                                         |
-| ------------------- | -------------------------------------------- |
-| `intel.bin`         | primary, columnar mmap, 20-flag bitmask      |
-| `blocklist.txt`     | scored, CIDR-minimized text for firewalls    |
-| `asns.json`         | ASN lists keyed by feed name                 |
-| `asn_prefixes.json` | ASN to announced prefixes (RIPEstat-cached)  |
-| `blocklist.bin`     | legacy IPBL v2 (scoring + categories)        |
+Aggregates IP/ASN threat intelligence into a single ~30 MB mmap-friendly
+database with 0–100 maliciousness scoring (consumer-side).
 
 ```bash
 wget https://github.com/tn3w/IPBlocklist/releases/latest/download/intel.bin
@@ -28,15 +13,23 @@ wget https://github.com/tn3w/IPBlocklist/releases/latest/download/intel.bin
 
 Live demo: [ipblocklist.tn3w.dev](https://ipblocklist.tn3w.dev).
 
+## Artifacts
+
+| file            | role                                       |
+| --------------- | ------------------------------------------ |
+| `intel.bin`     | primary, columnar mmap, 20-flag bitmask    |
+| `blocklist.txt` | scored, CIDR-minimized text for firewalls  |
+| `asns.json`     | ASN lists keyed by feed name               |
+| `blocklist.bin` | legacy IPBL v2 (scoring + categories)      |
+
 # intel.bin
 
-Built by `builder/` (Rust) from `feeds-intel.json` (164 sources). SoA
-columnar layout, mmap-friendly. No scoring or categories in-file; scoring
-is consumer-side.
+Built by `builder/` (Rust) from `feeds-intel.json`. SoA columnar layout.
+Scoring is consumer-side.
 
 ## Layout
 
-128-byte header, little-endian throughout:
+128-byte little-endian header:
 
 | offset | size | field         |
 | -----: | ---- | ------------- |
@@ -60,14 +53,14 @@ is consumer-side.
 Sections:
 
 - `v4_starts`, `v4_ends`: `v4_count × u32`, sorted by start
-- `v4_vals`: `v4_count × u16` (index into value table)
+- `v4_vals`: `v4_count × u16` (value-table index)
 - `v6_starts`, `v6_ends`: `v6_count × u128`, sorted
 - `v6_vals`: `v6_count × u16`
 - value table: `val_count × {flags u32, provider_id u32, source_id u32, _pad u32}`
 - string index: `str_count × {offset u32, len u32}` into `str_data`
 - string data: raw UTF-8
 
-Flag bits (LSB to MSB): `vpn, proxy, tor, malware, c2, scanner, brute_force,
+Flag bits (LSB→MSB): `vpn, proxy, tor, malware, c2, scanner, brute_force,
 spammer, compromised, datacenter, cdn, anycast, crawler, bot, cloud,
 private_relay, anonymizer, mobile, isp, government`.
 
@@ -78,93 +71,53 @@ Lookup: bisect `*_starts`, scan back while `prefix_max(ends)[i] >= ip`.
 ```bash
 cd builder
 cargo build --release
-PEERINGDB_API_KEY=... FEEDS_FILE=../feeds-intel.json OUT_FILE=../intel.bin \
+FEEDS_FILE=../feeds-intel.json OUT_FILE=../intel.bin \
   ./target/release/builder update
 ./target/release/builder check 1.2.3.4
 ```
 
-`NO_CACHE=1` bypasses HTTP + RIPEstat caches (`~/.cache/ipblocklist-builder/`).
+ASN→prefix and ASN→org are resolved offline from an `asndb-mini.bin`
+(via `ASNDB_FILE` env, downloaded by the workflow). HTTP cache:
+`request_cache/`.
 
-## Source model (feeds-intel.json)
+## feeds-intel.json
 
-Top-level: `{ "flags": [...], "feeds": [...] }`.
-
-Per-source fields:
+Top-level: `{ "flags": [...], "feeds": [...] }`. Per-source:
 
 - `name` (required)
-- `flags` (required, subset of the 20 canonical flags)
+- `flags` (subset of the 20 canonical flags)
 - `url` + `regex` for IP/CIDR sources
 - `is_asn: true` with `asns` (static) or `url`+`regex` (remote)
 - `provider` (optional)
 
-Canonical flags: `vpn`, `proxy`, `tor`, `malware`, `c2`, `scanner`,
-`brute_force`, `spammer`, `compromised`, `datacenter`, `cdn`, `anycast`,
-`crawler`, `bot`, `cloud`, `private_relay`, `anonymizer`, `mobile`,
-`isp`, `government`.
-
-## Python lookup and scoring
-
-`lookup_intel.py` mmaps `intel.bin` and emits a 0 to 100 maliciousness
-score.
+## Python lookup
 
 ```bash
 python3 lookup_intel.py 185.220.101.1
-python3 lookup_intel.py --benchmark
 ```
 
-### Scoring model
+### Scoring
 
-- Per-flag base severity: `malware`/`c2`=95, `compromised`=75,
-  `brute_force`=70, `spammer`=65, `scanner`=55, `tor`=45, `bot`=40,
-  `anonymizer`=35, `vpn`=30, `proxy`=25, `private_relay`=15,
-  `datacenter`=15, `crawler`=10, `cloud`=10, `cdn`=5;
-  `anycast`/`mobile`/`isp`/`government`=0.
-- IDF-style rarity bonus: `severity × (1 + log2(1/prevalence) / 24)`.
-- Top contribution plus 15% of remaining contributions, capping correlated
-  flag double-counting (proxy + anonymizer).
-- Multi-source confidence: `× (1 + 0.08 · log2(sources+1))`.
-- Capped at 100. Levels: `critical >=80`, `high >=60`, `medium >=35`,
-  `low >=15`, else `minimal`.
+- Per-flag severity: `malware`/`c2`=95, `compromised`=75, `brute_force`=70,
+  `spammer`=65, `scanner`=55, `tor`=45, `bot`=40, `anonymizer`=35,
+  `vpn`=30, `proxy`=25, `private_relay`/`datacenter`=15,
+  `cloud`/`crawler`=10, `cdn`=5, `anycast`/`mobile`/`isp`/`government`=0.
+- Rarity: `severity × (1 + log2(1/prevalence) / 24)`.
+- Top + 15% of remaining; multi-source boost `× (1 + 0.08·log2(sources+1))`.
+- Capped at 100. Levels: `critical ≥80`, `high ≥60`, `medium ≥35`,
+  `low ≥15`, else `minimal`.
 
-### Validation
-
-20k sampled v4 IPs: mean score tracks top-flag severity monotonically
-(Spearman 0.94, Pearson 0.83).
-
-| top flag    | severity | mean score |
-| ----------- | -------: | ---------: |
-| c2          |       95 |      100.0 |
-| malware     |       95 |      100.0 |
-| compromised |       75 |      100.0 |
-| brute_force |       70 |       99.5 |
-| spammer     |       65 |       99.9 |
-| tor         |       45 |       91.5 |
-| scanner     |       55 |       91.2 |
-| bot         |       40 |       82.3 |
-| vpn         |       30 |       58.3 |
-| anonymizer  |       35 |       44.4 |
-| datacenter  |       15 |       21.4 |
+20k v4 sample → Spearman 0.94, Pearson 0.83 vs top-flag severity.
 
 # blocklist.txt
 
-Scored ranges, thresholded, CIDR-promoted, non-routable stripped.
-
-Forms per line: `1.2.3.4`, `1.2.3.0/24`, `1.2.3.1-1.2.3.254`,
-`2001:db8::1`, `2001:db8::/32`, `2001:db8::1-2001:db8::ff`.
+Scored ranges, thresholded, CIDR-promoted, non-routable stripped. Forms
+per line: `1.2.3.4`, `1.2.3.0/24`, `1.2.3.1-1.2.3.254`, `2001:db8::1`,
+`2001:db8::/32`.
 
 ```bash
 ipset create blocklist hash:net
 grep -v '^#' blocklist.txt | xargs -n1 ipset add blocklist
-```
-
-# asns.json and asn_prefixes.json
-
-```json
-{"datacenter_asns": ["16509", "15169"], "bgptools_c2_asns": ["14618"]}
-```
-
-```json
-{"16509": ["192.0.2.0/24"], "15169": ["203.0.113.0/24"]}
 ```
 
 # Pipeline
@@ -176,20 +129,14 @@ flowchart LR
     A[feeds.json] --> P[aggregator.py]
     P --> T[blocklist.txt]
     P --> J[asns.json]
-    P --> AP[asn_prefixes.json]
     P --> L[blocklist.bin]
 ```
 
-`aggregator.py` resolves ASNs via RIPEstat (cached in `asn_prefixes.json`),
-merges overlapping ranges, writes legacy artifacts. Delete the cache to
-force a full refresh.
-
 # Deprecated: blocklist.bin
 
-IPBL v2 self-describing binary with scoring and categories. Kept for the
-demo page and legacy consumers; new integrations should use `intel.bin`.
-
-Built from `feeds.json` (163 feeds).
+IPBL v2 self-describing binary with scoring and categories. Kept for
+legacy consumers; new integrations should use `intel.bin`. Built from
+`feeds.json`.
 
 ```text
 [4 magic "IPBL"][1 version=2][4 timestamp LE]
@@ -205,11 +152,7 @@ feed_count × {
 }
 ```
 
-Lookup implementations for 25 languages live in `examples/`. Python:
-
-```bash
-python lookup.py 8.8.8.8
-```
+Lookup implementations for 25 languages live in `examples/`.
 
 # License
 

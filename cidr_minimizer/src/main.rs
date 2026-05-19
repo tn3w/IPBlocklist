@@ -30,7 +30,7 @@ fn main() {
             v4_events.push((end as u64 + 1, -score));
         }
 
-        // ::ffff:0.0.0.0/96 — IPv4-mapped IPv6 range
+        // ::ffff:0.0.0.0/96 IPv4-mapped IPv6 range
         const V4MAPPED_START: u128 = 0xFFFF_0000_0000;
         const V4MAPPED_END: u128 = 0xFFFF_FFFF_FFFF;
 
@@ -193,7 +193,7 @@ fn sweep_line_v6(events: &mut [(u128, f64)], threshold: f64) -> Vec<(u128, u128)
 
 // ── Hierarchical CIDR promotion for IPv4 ──
 // Bottom-up from /27 to /8: promotions at smaller blocks cascade into larger ones.
-// Only boundary blocks need checking — interior blocks are already 100% covered.
+// Only boundary blocks need checking interior blocks are already 100% covered.
 
 fn promote_cidrs_v4(ranges: &[(u32, u32)], coverage_pct: f32) -> Vec<(u32, u32)> {
     let mut current = merge_ranges_u32(ranges);
@@ -379,21 +379,21 @@ fn cidr_v4(a: u8, b: u8, c: u8, d: u8, prefix: u8) -> (u32, u32) {
 
 fn subtract_non_routable_v4(ranges: &[(u32, u32)]) -> Vec<(u32, u32)> {
     let exclusions: Vec<(u32, u32)> = vec![
-        cidr_v4(0, 0, 0, 0, 8),       // 0.0.0.0/8        — current network
-        cidr_v4(10, 0, 0, 0, 8),      // 10.0.0.0/8       — private (RFC 1918)
-        cidr_v4(100, 64, 0, 0, 10),   // 100.64.0.0/10    — CGN shared (RFC 6598)
-        cidr_v4(127, 0, 0, 0, 8),     // 127.0.0.0/8      — loopback
-        cidr_v4(169, 254, 0, 0, 16),  // 169.254.0.0/16   — link-local
-        cidr_v4(172, 16, 0, 0, 12),   // 172.16.0.0/12    — private (RFC 1918)
-        cidr_v4(192, 0, 0, 0, 24),    // 192.0.0.0/24     — IETF protocol assignments
-        cidr_v4(192, 0, 2, 0, 24),    // 192.0.2.0/24     — TEST-NET-1
-        cidr_v4(192, 88, 99, 0, 24),  // 192.88.99.0/24   — 6to4 relay anycast
-        cidr_v4(192, 168, 0, 0, 16),  // 192.168.0.0/16   — private (RFC 1918)
-        cidr_v4(198, 18, 0, 0, 15),   // 198.18.0.0/15    — benchmarking
-        cidr_v4(198, 51, 100, 0, 24), // 198.51.100.0/24  — TEST-NET-2
-        cidr_v4(203, 0, 113, 0, 24),  // 203.0.113.0/24   — TEST-NET-3
-        cidr_v4(224, 0, 0, 0, 4),     // 224.0.0.0/4      — multicast
-        cidr_v4(240, 0, 0, 0, 4),     // 240.0.0.0/4      — reserved/future + broadcast
+        cidr_v4(0, 0, 0, 0, 8),       // 0.0.0.0/8        current network
+        cidr_v4(10, 0, 0, 0, 8),      // 10.0.0.0/8       private (RFC 1918)
+        cidr_v4(100, 64, 0, 0, 10),   // 100.64.0.0/10    CGN shared (RFC 6598)
+        cidr_v4(127, 0, 0, 0, 8),     // 127.0.0.0/8      loopback
+        cidr_v4(169, 254, 0, 0, 16),  // 169.254.0.0/16   link-local
+        cidr_v4(172, 16, 0, 0, 12),   // 172.16.0.0/12    private (RFC 1918)
+        cidr_v4(192, 0, 0, 0, 24),    // 192.0.0.0/24     IETF protocol assignments
+        cidr_v4(192, 0, 2, 0, 24),    // 192.0.2.0/24     TEST-NET-1
+        cidr_v4(192, 88, 99, 0, 24),  // 192.88.99.0/24   6to4 relay anycast
+        cidr_v4(192, 168, 0, 0, 16),  // 192.168.0.0/16   private (RFC 1918)
+        cidr_v4(198, 18, 0, 0, 15),   // 198.18.0.0/15    benchmarking
+        cidr_v4(198, 51, 100, 0, 24), // 198.51.100.0/24  TEST-NET-2
+        cidr_v4(203, 0, 113, 0, 24),  // 203.0.113.0/24   TEST-NET-3
+        cidr_v4(224, 0, 0, 0, 4),     // 224.0.0.0/4      multicast
+        cidr_v4(240, 0, 0, 0, 4),     // 240.0.0.0/4      reserved/future + broadcast
     ];
     subtract_ranges_u32(ranges, &exclusions)
 }
