@@ -93,7 +93,7 @@ Top-level: `{ "flags": [...], "feeds": [...] }`. Per-source:
 ## Python lookup
 
 ```bash
-python3 lookup_intel.py 185.220.101.1
+python3 lookup.py 185.220.101.1
 ```
 
 ### Scoring

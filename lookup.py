@@ -1,187 +1,224 @@
 import ipaddress
+import json
+import math
+import mmap
 import struct
 import sys
 from bisect import bisect_right
 from time import perf_counter
 
-MAGIC = b"IPBL"
-IPV4_MAX = 0xFFFFFFFF
+import numpy as np
+
+FLAGS = [
+    "vpn", "proxy", "tor", "malware", "c2", "scanner", "brute_force",
+    "spammer", "compromised", "datacenter", "cdn", "anycast", "crawler",
+    "bot", "cloud", "private_relay", "anonymizer", "mobile", "isp",
+    "government",
+]
+
+SEVERITY = {
+    "malware": 95, "c2": 95, "compromised": 75, "brute_force": 70,
+    "spammer": 65, "scanner": 55, "tor": 45, "bot": 40, "anonymizer": 35,
+    "vpn": 30, "proxy": 25, "datacenter": 15, "private_relay": 15,
+    "cloud": 10, "crawler": 10, "cdn": 5,
+    "anycast": 0, "mobile": 0, "isp": 0, "government": 0,
+}
+
+HEADER = (
+    "version", "_r0", "v4n", "v6n", "valn", "strn",
+    "v4s", "v4e", "v4v", "v6s", "v6e", "v6v",
+    "vt", "si", "sd", "sl",
+)
+
+LEVELS = [(80, "critical"), (60, "high"), (35, "medium"), (15, "low")]
 
 
-def read_varint(file_handle):
-    result = 0
-    shift = 0
-    while True:
-        byte = file_handle.read(1)
-        if not byte:
-            raise EOFError("unexpected end of file")
-
-        value = byte[0]
-        result |= (value & 0x7F) << shift
-        if not (value & 0x80):
-            return result
-        shift += 7
+def level_for(score):
+    for threshold, name in LEVELS:
+        if score >= threshold:
+            return name
+    return "minimal"
 
 
-def build_family_index(feed_index, ranges):
-    ipv4_starts = []
-    ipv4_ends = []
-    ipv6_starts = []
-    ipv6_ends = []
-
-    for start, end in ranges:
-        if end <= IPV4_MAX:
-            ipv4_starts.append(start)
-            ipv4_ends.append(end)
-        else:
-            ipv6_starts.append(start)
-            ipv6_ends.append(end)
-
-    indexed = []
-    if ipv4_starts:
-        indexed.append((4, feed_index, tuple(ipv4_starts), tuple(ipv4_ends)))
-    if ipv6_starts:
-        indexed.append((6, feed_index, tuple(ipv6_starts), tuple(ipv6_ends)))
-    return indexed
+def prefer_tor(providers):
+    ordered = list(dict.fromkeys(p for p in providers if p))
+    for i, p in enumerate(ordered):
+        if p.lower() == "tor":
+            ordered.pop(i)
+            ordered.insert(0, "Tor")
+            break
+    return ordered
 
 
-def load_blocklist(path="blocklist.bin"):
-    ipv4_feeds = []
-    ipv6_feeds = []
-    feeds_meta = []
+class IntelDb:
+    def __init__(self, path):
+        self.file = open(path, "rb")
+        self.mm = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_READ)
+        self.h = dict(zip(HEADER, struct.unpack_from("<II14Q", self.mm, 0)))
 
-    with open(path, "rb", buffering=1024 * 1024) as f:
-        magic = f.read(4)
-        if magic != MAGIC:
-            raise ValueError(f"invalid magic: {magic!r}, expected {MAGIC!r}")
+        self.v4_starts = self._u32("v4s", "v4n")
+        self.v4_ends = self._u32("v4e", "v4n")
+        self.v4_vals = self._u16("v4v", "v4n")
+        self.v4_max = np.maximum.accumulate(self.v4_ends)
 
-        version = struct.unpack("<B", f.read(1))[0]
-        if version != 2:
-            raise ValueError(f"unsupported version: {version}")
+        self.v6_starts = self._u128("v6s", "v6n")
+        self.v6_ends = self._u128("v6e", "v6n")
+        self.v6_vals = self._u16("v6v", "v6n")
+        self.v6_max = list(np.maximum.accumulate(self.v6_ends or [0]))
 
-        timestamp = struct.unpack("<I", f.read(4))[0]
+        self.values = self._u32("vt", "valn", width=4).reshape(-1, 4)
+        self.strings = self._strings()
+        self.weights = self._weights()
 
-        flag_count = struct.unpack("<B", f.read(1))[0]
-        flag_table = []
-        for _ in range(flag_count):
-            length = struct.unpack("<B", f.read(1))[0]
-            flag_table.append(f.read(length).decode("utf-8"))
+    def _u32(self, off_key, n_key, width=1):
+        return np.frombuffer(
+            self.mm, dtype="<u4",
+            count=self.h[n_key] * width, offset=self.h[off_key],
+        )
 
-        cat_count = struct.unpack("<B", f.read(1))[0]
-        cat_table = []
-        for _ in range(cat_count):
-            length = struct.unpack("<B", f.read(1))[0]
-            cat_table.append(f.read(length).decode("utf-8"))
+    def _u16(self, off_key, n_key):
+        return np.frombuffer(
+            self.mm, dtype="<u2", count=self.h[n_key], offset=self.h[off_key],
+        )
 
-        feed_count = struct.unpack("<H", f.read(2))[0]
+    def _u128(self, off_key, n_key):
+        n = self.h[n_key]
+        if not n:
+            return []
+        raw = np.frombuffer(
+            self.mm, dtype="<u8", count=n * 2, offset=self.h[off_key],
+        ).reshape(-1, 2)
+        return [int(hi) << 64 | int(lo) for lo, hi in raw]
 
-        for _ in range(feed_count):
-            name_length = struct.unpack("<B", f.read(1))[0]
-            feed_name = f.read(name_length).decode("utf-8")
+    def _strings(self):
+        idx = np.frombuffer(
+            self.mm, dtype="<u4", count=self.h["strn"] * 2,
+            offset=self.h["si"],
+        ).reshape(-1, 2)
+        data = bytes(self.mm[self.h["sd"]:self.h["sd"] + self.h["sl"]])
+        return [
+            data[int(o):int(o) + int(length)].decode("utf-8", "replace")
+            for o, length in idx
+        ]
 
-            base_score = struct.unpack("<B", f.read(1))[0] / 200.0
-            confidence = struct.unpack("<B", f.read(1))[0] / 200.0
+    def _weights(self):
+        bits = self.values[:, 0][self.v4_vals]
+        total = max(len(bits), 1)
+        weights = {}
+        for i, name in enumerate(FLAGS):
+            count = int(np.sum((bits & (1 << i)) != 0))
+            prevalence = max(count / total, 1 / total)
+            rarity = math.log2(1 / prevalence)
+            weights[name] = SEVERITY[name] * (1 + rarity / 24)
+        return weights
 
-            flags_mask = struct.unpack("<I", f.read(4))[0]
-            cats_mask = struct.unpack("<B", f.read(1))[0]
+    def _scan(self, starts, ends, max_end, vals, ip, start_idx):
+        out = []
+        i = start_idx
+        while i > 0:
+            i -= 1
+            if max_end[i] < ip:
+                break
+            if ends[i] >= ip:
+                out.append((int(starts[i]), int(ends[i]), int(vals[i])))
+        return out
 
-            flags = [
-                flag_table[i] for i in range(len(flag_table)) if flags_mask & (1 << i)
-            ]
-            categories = [
-                cat_table[i] for i in range(len(cat_table)) if cats_mask & (1 << i)
-            ]
-
-            feed_index = len(feeds_meta)
-            feeds_meta.append(
-                {
-                    "name": feed_name,
-                    "base_score": base_score,
-                    "confidence": confidence,
-                    "flags": flags,
-                    "categories": categories,
-                }
+    def _hits(self, ip, v4):
+        if v4:
+            i = int(np.searchsorted(self.v4_starts, ip, side="right"))
+            return self._scan(
+                self.v4_starts, self.v4_ends, self.v4_max, self.v4_vals, ip, i,
             )
+        if not self.v6_starts:
+            return []
+        i = bisect_right(self.v6_starts, ip)
+        return self._scan(
+            self.v6_starts, self.v6_ends, self.v6_max, self.v6_vals, ip, i,
+        )
 
-            range_count = struct.unpack("<I", f.read(4))[0]
-            ranges = []
-            current_start = 0
-            for _ in range(range_count):
-                current_start += read_varint(f)
-                range_size = read_varint(f)
-                ranges.append((current_start, current_start + range_size))
+    def _render(self, start, end, val_id, formatter):
+        bits, provider_id, source_id, _ = self.values[val_id]
+        bits = int(bits)
+        flags = [n for i, n in enumerate(FLAGS) if bits & (1 << i)]
+        weight = max((self.weights[f] for f in flags), default=0)
+        return {
+            "source": self.strings[int(source_id)],
+            "provider": self.strings[int(provider_id)],
+            "range": f"{formatter(start)}-{formatter(end)}",
+            "flags": flags,
+            "weight": round(weight, 1),
+        }
 
-            for family, idx, starts, ends in build_family_index(feed_index, ranges):
-                if family == 4:
-                    ipv4_feeds.append((idx, starts, ends))
-                else:
-                    ipv6_feeds.append((idx, starts, ends))
+    def lookup(self, ip_str):
+        addr = ipaddress.ip_address(ip_str)
+        formatter = (
+            ipaddress.IPv4Address if addr.version == 4 else ipaddress.IPv6Address
+        )
+        matches = [
+            self._render(s, e, v, formatter)
+            for s, e, v in self._hits(int(addr), addr.version == 4)
+        ]
+        matches.sort(key=lambda m: -m["weight"])
+        return self._summary(ip_str, matches)
 
-    return (
-        timestamp,
-        tuple(feeds_meta),
-        tuple(ipv4_feeds),
-        tuple(ipv6_feeds),
-    )
+    def _score(self, matches):
+        flag_value = {}
+        for match in matches:
+            for flag in match["flags"]:
+                value = self.weights[flag]
+                if value > flag_value.get(flag, 0):
+                    flag_value[flag] = value
+        if not flag_value:
+            return 0.0, [], 0
+        ranked = sorted(flag_value.items(), key=lambda x: -x[1])
+        top = ranked[0][1]
+        extras = sum(v for _, v in ranked[1:]) * 0.15
+        sources = {(m["provider"], m["source"]) for m in matches}
+        boost = 1 + 0.08 * math.log2(len(sources) + 1)
+        score = round(min(100, (top + extras) * boost), 1)
+        reasons = [f for f, _ in ranked[:5]]
+        return score, reasons, len(sources)
+
+    def _summary(self, ip, matches):
+        score, reasons, source_count = self._score(matches)
+        all_flags = []
+        for match in matches:
+            for flag in match["flags"]:
+                if flag not in all_flags:
+                    all_flags.append(flag)
+        providers = prefer_tor(m["provider"] for m in matches)
+        return {
+            "ip": ip,
+            "found": bool(matches),
+            "verdict": level_for(score) if matches else "clean",
+            "score": score,
+            "detections": len(matches),
+            "sources": source_count,
+            "top_provider": providers[0] if providers else "",
+            "providers": providers,
+            "flags": all_flags,
+            "reasons": reasons,
+            "matches": matches,
+        }
 
 
-def range_contains(starts, ends, target):
-    index = bisect_right(starts, target) - 1
-    return index >= 0 and target <= ends[index]
+def main():
+    if len(sys.argv) < 2:
+        print("usage: lookup.py <ip> [intel.bin]", file=sys.stderr)
+        sys.exit(1)
 
+    path = sys.argv[2] if len(sys.argv) > 2 else "intel.bin"
+    t = perf_counter()
+    db = IntelDb(path)
+    load_us = int((perf_counter() - t) * 1e6)
 
-def lookup_ip(feeds_meta, ipv4_feeds, ipv6_feeds, ip_value):
-    address = ipaddress.ip_address(ip_value)
-    target = int(address)
-    family_feeds = ipv4_feeds if address.version == 4 else ipv6_feeds
+    t = perf_counter()
+    result = db.lookup(sys.argv[1])
+    lookup_ns = int((perf_counter() - t) * 1e9)
 
-    matches = []
-    for feed_index, starts, ends in family_feeds:
-        if range_contains(starts, ends, target):
-            matches.append(feeds_meta[feed_index])
-
-    return matches
-
-
-def format_match(meta):
-    score = meta["base_score"] * meta["confidence"]
-    parts = [meta["name"], f"score={score:.2f}"]
-    if meta["flags"]:
-        parts.append(f"flags={','.join(meta['flags'])}")
-    if meta["categories"]:
-        parts.append(f"cats={','.join(meta['categories'])}")
-    return " | ".join(parts)
-
-
-def main(argv):
-    if len(argv) < 2:
-        print("Usage: python lookup.py <ip> [<ip> ...]")
-        return 1
-
-    load_started = perf_counter()
-    _, feeds_meta, ipv4_feeds, ipv6_feeds = load_blocklist()
-    load_elapsed = perf_counter() - load_started
-
-    lookup_started = perf_counter()
-    for ip_value in argv[1:]:
-        try:
-            matches = lookup_ip(feeds_meta, ipv4_feeds, ipv6_feeds, ip_value)
-        except ValueError:
-            print(f"{ip_value}: invalid IP")
-            continue
-
-        if matches:
-            for meta in matches:
-                print(f"{ip_value}: {format_match(meta)}")
-        else:
-            print(f"{ip_value}: no matches")
-    lookup_elapsed = perf_counter() - lookup_started
-
-    print(f"load time: {load_elapsed * 1000:.2f} ms")
-    print(f"lookup time for {len(argv) - 1} IPs:" f" {lookup_elapsed * 1000:.2f} ms")
-
-    return 0
+    result["_perf"] = {"load_us": load_us, "lookup_ns": lookup_ns}
+    print(json.dumps(result, indent=2))
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv))
+    main()
