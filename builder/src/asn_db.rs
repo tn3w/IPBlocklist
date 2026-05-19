@@ -176,7 +176,33 @@ fn re(once: &'static OnceLock<regex::Regex>, pattern: &'static str)
     once.get_or_init(|| regex::Regex::new(pattern).unwrap())
 }
 
+fn strip_handle(text: &str) -> String {
+    let trimmed = text.trim();
+    let (first, rest) = match trimmed.find(char::is_whitespace) {
+        Some(i) => (&trimmed[..i], trimmed[i..].trim_start()),
+        None => return trimmed.to_string(),
+    };
+    if rest.is_empty() {
+        return trimmed.to_string();
+    }
+    let chars_ok = !first.is_empty()
+        && first.chars().all(|c| {
+            c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_' || c == '-'
+        });
+    let has_marker = first.chars().any(|c| !c.is_ascii_uppercase());
+    if !chars_ok || (!has_marker && first.len() <= 4) {
+        return trimmed.to_string();
+    }
+    let rest = rest
+        .strip_prefix("- ")
+        .or_else(|| rest.strip_prefix("-\t"))
+        .unwrap_or(rest);
+    rest.trim_start().to_string()
+}
+
 pub fn normalize(name: &str) -> String {
+    let name = strip_handle(name);
+    let name = name.as_str();
     let suffix = re(&SUFFIX,
         r"(?i)[, ]+(?:s\.?[apr]\.?[a-z]?\.?|sp\.? ?z\.? ?o\.?o\.?|a\.?s\.?|\
         gmbh|kg|ag|ab|oy|n\.?v\.?|b\.?v\.?|co\.?,? ?ltd\.?|\
