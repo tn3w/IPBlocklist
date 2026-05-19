@@ -200,8 +200,17 @@ fn strip_handle(text: &str) -> String {
     rest.trim_start().to_string()
 }
 
+fn dedupe_leading(text: &str) -> String {
+    let words: Vec<&str> = text.split_whitespace().collect();
+    if words.len() >= 2 && words[0].eq_ignore_ascii_case(words[1]) {
+        return words[1..].join(" ");
+    }
+    text.to_string()
+}
+
 pub fn normalize(name: &str) -> String {
     let name = strip_handle(name);
+    let name = dedupe_leading(&name);
     let name = name.as_str();
     let suffix = re(&SUFFIX,
         r"(?i)[, ]+(?:s\.?[apr]\.?[a-z]?\.?|sp\.? ?z\.? ?o\.?o\.?|a\.?s\.?|\
