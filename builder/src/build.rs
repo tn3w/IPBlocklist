@@ -268,14 +268,14 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     });
 
     let results = results.into_inner().unwrap();
-    let mut failures: Vec<String> = Vec::new();
+    let mut failures = 0usize;
 
     let mut b = Builder::new();
     for r in results.iter().flatten() {
         match r {
             Err(e) => {
                 eprintln!("  FAIL {}", e);
-                failures.push(e.clone());
+                failures += 1;
             }
             Ok(parts) => {
                 for r in parts {
@@ -294,9 +294,8 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
         }
     }
 
-    if !failures.is_empty() {
-        return Err(format!("{} feed(s) failed:\n  {}",
-            failures.len(), failures.join("\n  ")).into());
+    if failures > 0 {
+        eprintln!("warning: {failures} feed(s) failed, continuing");
     }
 
     let v4n = b.v4.len();
