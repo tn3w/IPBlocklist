@@ -783,39 +783,76 @@
                 return out;
             }
 
+            const V4_BUCKETS = 65536;
+
             function parseIntel(buffer) {
                 const view = new DataView(buffer);
                 const bytes = new Uint8Array(buffer);
 
                 const version = view.getUint32(0, true);
-                if (version !== 4) {
+                if (version !== 6) {
                     throw new Error(`Unsupported intel.bin version ${version}`);
                 }
 
-                const v4n = readU64(view, 8);
-                const v6n = readU64(view, 16);
-                const valn = readU64(view, 24);
-                const strn = readU64(view, 32);
-                const v4s = readU64(view, 40);
-                const v4e = readU64(view, 48);
-                const v4v = readU64(view, 56);
-                const v6s = readU64(view, 64);
-                const v6e = readU64(view, 72);
-                const v6v = readU64(view, 80);
-                const vt = readU64(view, 88);
-                const si = readU64(view, 96);
-                const sd = readU64(view, 104);
-                const sl = readU64(view, 112);
+                const cn = readU64(view, 8);
+                const ln = readU64(view, 16);
+                const v6n = readU64(view, 24);
+                const valn = readU64(view, 32);
+                const strn = readU64(view, 40);
+                const bucketOff = readU64(view, 48);
+                const startsLoOff = readU64(view, 56);
+                const lensOff = readU64(view, 64);
+                const valsOff = readU64(view, 72);
+                const lStartsOff = readU64(view, 80);
+                const lEndsOff = readU64(view, 88);
+                const lValsOff = readU64(view, 96);
+                const v6s = readU64(view, 104);
+                const v6e = readU64(view, 112);
+                const v6v = readU64(view, 120);
+                const vt = readU64(view, 128);
+                const si = readU64(view, 136);
+                const sd = readU64(view, 144);
+                const sl = readU64(view, 152);
 
-                const v4_starts = new Uint32Array(buffer, v4s, v4n);
-                const v4_ends = new Uint32Array(buffer, v4e, v4n);
-                const v4_vals = new Uint16Array(buffer, v4v, v4n);
+                const bucket_index = new Uint32Array(
+                    buffer, bucketOff, V4_BUCKETS + 1
+                );
+                const starts_lo = cn
+                    ? new Uint16Array(buffer, startsLoOff, cn)
+                    : new Uint16Array(0);
+                const lens = cn
+                    ? new Uint16Array(buffer, lensOff, cn)
+                    : new Uint16Array(0);
+                const vals = cn
+                    ? new Uint16Array(buffer, valsOff, cn)
+                    : new Uint16Array(0);
 
-                const v4_max = new Uint32Array(v4n);
-                let acc4 = 0;
-                for (let i = 0; i < v4n; i++) {
-                    if (v4_ends[i] > acc4) acc4 = v4_ends[i];
-                    v4_max[i] = acc4;
+                const max_ends_lo = new Uint16Array(cn);
+                for (let b = 0; b < V4_BUCKETS; b++) {
+                    const s = bucket_index[b];
+                    const e = bucket_index[b + 1];
+                    let cur = 0;
+                    for (let i = s; i < e; i++) {
+                        const endLo = (starts_lo[i] + lens[i]) & 0xFFFF;
+                        if (endLo > cur) cur = endLo;
+                        max_ends_lo[i] = cur;
+                    }
+                }
+
+                const l_starts = ln
+                    ? new Uint32Array(buffer, lStartsOff, ln)
+                    : new Uint32Array(0);
+                const l_ends = ln
+                    ? new Uint32Array(buffer, lEndsOff, ln)
+                    : new Uint32Array(0);
+                const l_vals = ln
+                    ? new Uint16Array(buffer, lValsOff, ln)
+                    : new Uint16Array(0);
+                const l_max = new Uint32Array(ln);
+                let accL = 0;
+                for (let i = 0; i < ln; i++) {
+                    if (l_ends[i] > accL) accL = l_ends[i];
+                    l_max[i] = accL;
                 }
 
                 const v6_starts = new Array(v6n);
@@ -824,8 +861,9 @@
                     v6_starts[i] = readU128(view, v6s + i * 16);
                     v6_ends[i] = readU128(view, v6e + i * 16);
                 }
-                const v6_vals = new Uint16Array(buffer, v6v, v6n);
-
+                const v6_vals = v6n
+                    ? new Uint16Array(buffer, v6v, v6n)
+                    : new Uint16Array(0);
                 const v6_max = new Array(v6n);
                 let acc6 = 0n;
                 for (let i = 0; i < v6n; i++) {
@@ -836,21 +874,31 @@
                 const values = new Uint32Array(buffer, vt, valn * 4);
                 const strings = readStrings(bytes, si, strn, sd, sl);
 
+                const totalV4 = cn + ln;
                 const weights = {};
-                const total = Math.max(v4n, 1);
-                for (let f = 0; f < FLAGS.length; f++) {
-                    let count = 0;
-                    for (let i = 0; i < v4n; i++) {
-                        const bits = values[v4_vals[i] * 4];
-                        if (bits & (1 << f)) count++;
+                const total = Math.max(totalV4, 1);
+                const flagCounts = new Uint32Array(FLAGS.length);
+                const tally = (arr, n) => {
+                    for (let i = 0; i < n; i++) {
+                        const bits = values[arr[i] * 4];
+                        for (let f = 0; f < FLAGS.length; f++) {
+                            if (bits & (1 << f)) flagCounts[f]++;
+                        }
                     }
-                    const prevalence = Math.max(count / total, 1 / total);
+                };
+                tally(vals, cn);
+                tally(l_vals, ln);
+                for (let f = 0; f < FLAGS.length; f++) {
+                    const prevalence = Math.max(
+                        flagCounts[f] / total, 1 / total
+                    );
                     const rarity = Math.log2(1 / prevalence);
                     weights[FLAGS[f]] = SEVERITY[FLAGS[f]] * (1 + rarity / 24);
                 }
 
                 return {
-                    v4_starts, v4_ends, v4_vals, v4_max,
+                    bucket_index, starts_lo, lens, vals, max_ends_lo,
+                    l_starts, l_ends, l_vals, l_max,
                     v6_starts, v6_ends, v6_vals, v6_max,
                     values, strings, weights,
                 };
@@ -912,14 +960,17 @@
                 return s.includes(':') && /^[0-9a-fA-F:]+$/.test(s);
             }
 
-            function bisectRightU32(arr, target) {
-                let lo = 0, hi = arr.length;
+            function bisectRightBounded(arr, lo, hi, target) {
                 while (lo < hi) {
                     const mid = (lo + hi) >>> 1;
                     if (arr[mid] <= target) lo = mid + 1;
                     else hi = mid;
                 }
                 return lo;
+            }
+
+            function bisectRightU32(arr, target) {
+                return bisectRightBounded(arr, 0, arr.length, target);
             }
 
             function bisectRightBig(arr, target) {
@@ -951,18 +1002,44 @@
 
             function lookupV4(ip) {
                 const hits = [];
-                let i = bisectRightU32(db.v4_starts, ip);
-                while (i > 0) {
-                    i--;
-                    if (db.v4_max[i] < ip) break;
-                    if (db.v4_ends[i] >= ip) {
-                        const v = decodeValue(db.v4_vals[i]);
-                        hits.push({
-                            start: intToIPv4(db.v4_starts[i]),
-                            end: intToIPv4(db.v4_ends[i]),
-                            ...v,
-                            flags: flagsFromMask(v.flagsMask),
-                        });
+                const bucket = (ip >>> 16) & 0xFFFF;
+                const ipLo = ip & 0xFFFF;
+                const bs = db.bucket_index[bucket];
+                const be = db.bucket_index[bucket + 1];
+                if (bs < be) {
+                    const prefix = bucket << 16;
+                    let i = bisectRightBounded(db.starts_lo, bs, be, ipLo);
+                    while (i > bs) {
+                        i--;
+                        if (db.max_ends_lo[i] < ipLo) break;
+                        const endLo = (db.starts_lo[i] + db.lens[i]) & 0xFFFF;
+                        if (endLo >= ipLo) {
+                            const v = decodeValue(db.vals[i]);
+                            hits.push({
+                                start: intToIPv4(
+                                    (prefix | db.starts_lo[i]) >>> 0
+                                ),
+                                end: intToIPv4((prefix | endLo) >>> 0),
+                                ...v,
+                                flags: flagsFromMask(v.flagsMask),
+                            });
+                        }
+                    }
+                }
+                if (db.l_starts.length) {
+                    let i = bisectRightU32(db.l_starts, ip);
+                    while (i > 0) {
+                        i--;
+                        if (db.l_max[i] < ip) break;
+                        if (db.l_ends[i] >= ip) {
+                            const v = decodeValue(db.l_vals[i]);
+                            hits.push({
+                                start: intToIPv4(db.l_starts[i]),
+                                end: intToIPv4(db.l_ends[i]),
+                                ...v,
+                                flags: flagsFromMask(v.flagsMask),
+                            });
+                        }
                     }
                 }
                 return hits;
@@ -1268,9 +1345,10 @@
                     setStatus('loading', 'Parsing intel.bin…');
                     db = parseIntel(buffer);
 
+                    const v4Total = db.starts_lo.length + db.l_starts.length;
                     setStatus(
                         'ready',
-                        `Ready ${db.v4_starts.length.toLocaleString()} v4 + ` +
+                        `Ready ${v4Total.toLocaleString()} v4 + ` +
                             `${db.v6_starts.length.toLocaleString()} v6 ranges, ` +
                             `${db.strings.length.toLocaleString()} strings`
                     );

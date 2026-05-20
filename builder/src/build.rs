@@ -300,10 +300,12 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
 
     let v4n = b.v4.len();
     let v6n = b.v6.len();
-    b.finalize();
+    b.finalize()?;
     if verbose {
-        println!("merge: v4 {} -> {} | v6 {} -> {}", v4n, b.v4.len(), v6n, b.v6.len());
-        println!("values: {} | strings: {}", b.values.len(), b.strings.len());
+        println!("merge: v4 {} -> {} | v6 {} -> {}",
+            v4n, b.v4.len(), v6n, b.v6.len());
+        println!("values: {} | strings: {}",
+            b.values.len(), b.strings.len());
     }
     b.write(out)?;
     Ok(())

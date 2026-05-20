@@ -25,11 +25,15 @@ SEVERITY = {
 }
 
 HEADER = (
-    "version", "_r0", "v4n", "v6n", "valn", "strn",
-    "v4s", "v4e", "v4v", "v6s", "v6e", "v6v",
+    "version", "_r0",
+    "cn", "ln", "v6n", "valn", "strn",
+    "bucket", "starts_lo", "lens", "vals",
+    "lstarts", "lends", "lvals",
+    "v6s", "v6e", "v6v",
     "vt", "si", "sd", "sl",
 )
 
+V4_BUCKETS = 65536
 LEVELS = [(80, "critical"), (60, "high"), (35, "medium"), (15, "low")]
 
 
@@ -54,46 +58,87 @@ class IntelDb:
     def __init__(self, path):
         self.file = open(path, "rb")
         self.mm = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_READ)
-        self.h = dict(zip(HEADER, struct.unpack_from("<II14Q", self.mm, 0)))
+        fields = struct.unpack_from("<II19Q", self.mm, 0)
+        self.h = dict(zip(HEADER, fields))
+        if self.h["version"] != 6:
+            raise SystemExit(
+                f"unsupported intel.bin version {self.h['version']} (expected 6)"
+            )
 
-        self.v4_starts = self._u32("v4s", "v4n")
-        self.v4_ends = self._u32("v4e", "v4n")
-        self.v4_vals = self._u16("v4v", "v4n")
-        self.v4_max = np.maximum.accumulate(self.v4_ends)
+        self.bucket_index = np.frombuffer(
+            self.mm, dtype="<u4", count=V4_BUCKETS + 1,
+            offset=self.h["bucket"],
+        )
+        cn = self.h["cn"]
+        self.starts_lo = np.frombuffer(
+            self.mm, dtype="<u2", count=cn, offset=self.h["starts_lo"],
+        ) if cn else np.zeros(0, dtype="<u2")
+        self.lens = np.frombuffer(
+            self.mm, dtype="<u2", count=cn, offset=self.h["lens"],
+        ) if cn else np.zeros(0, dtype="<u2")
+        self.vals = np.frombuffer(
+            self.mm, dtype="<u2", count=cn, offset=self.h["vals"],
+        ) if cn else np.zeros(0, dtype="<u2")
 
-        self.v6_starts = self._u128("v6s", "v6n")
-        self.v6_ends = self._u128("v6e", "v6n")
-        self.v6_vals = self._u16("v6v", "v6n")
-        self.v6_max = list(np.maximum.accumulate(self.v6_ends or [0]))
+        ln = self.h["ln"]
+        self.lstarts = np.frombuffer(
+            self.mm, dtype="<u4", count=ln, offset=self.h["lstarts"],
+        ) if ln else np.zeros(0, dtype="<u4")
+        self.lends = np.frombuffer(
+            self.mm, dtype="<u4", count=ln, offset=self.h["lends"],
+        ) if ln else np.zeros(0, dtype="<u4")
+        self.lvals = np.frombuffer(
+            self.mm, dtype="<u2", count=ln, offset=self.h["lvals"],
+        ) if ln else np.zeros(0, dtype="<u2")
+        self.lmax = (np.maximum.accumulate(self.lends) if ln
+                     else np.zeros(0, dtype="<u4"))
 
-        self.values = self._u32("vt", "valn", width=4).reshape(-1, 4)
+        self.max_ends_lo = self._build_max_ends_lo()
+
+        v6n = self.h["v6n"]
+        self.v6_starts = self._u128("v6s", v6n)
+        self.v6_ends = self._u128("v6e", v6n)
+        self.v6_vals = np.frombuffer(
+            self.mm, dtype="<u2", count=v6n, offset=self.h["v6v"],
+        ) if v6n else np.zeros(0, dtype="<u2")
+        self.v6_max = (list(np.maximum.accumulate(self.v6_ends))
+                       if self.v6_ends else [])
+
+        self.values = self._values()
         self.strings = self._strings()
         self.weights = self._weights()
 
-    def _u32(self, off_key, n_key, width=1):
-        return np.frombuffer(
-            self.mm, dtype="<u4",
-            count=self.h[n_key] * width, offset=self.h[off_key],
-        )
-
-    def _u16(self, off_key, n_key):
-        return np.frombuffer(
-            self.mm, dtype="<u2", count=self.h[n_key], offset=self.h[off_key],
-        )
-
-    def _u128(self, off_key, n_key):
-        n = self.h[n_key]
+    def _u128(self, key, n):
         if not n:
             return []
         raw = np.frombuffer(
-            self.mm, dtype="<u8", count=n * 2, offset=self.h[off_key],
+            self.mm, dtype="<u8", count=n * 2, offset=self.h[key],
         ).reshape(-1, 2)
         return [int(hi) << 64 | int(lo) for lo, hi in raw]
 
+    def _build_max_ends_lo(self):
+        out = np.zeros(len(self.starts_lo), dtype="<u2")
+        end_lo = (self.starts_lo.astype(np.uint32) +
+                  self.lens.astype(np.uint32)).astype(np.uint16)
+        for b in range(V4_BUCKETS):
+            s = int(self.bucket_index[b])
+            e = int(self.bucket_index[b + 1])
+            if s < e:
+                out[s:e] = np.maximum.accumulate(end_lo[s:e])
+        return out
+
+    def _values(self):
+        n = self.h["valn"]
+        if not n:
+            return np.zeros((0, 4), dtype="<u4")
+        return np.frombuffer(
+            self.mm, dtype="<u4", count=n * 4, offset=self.h["vt"],
+        ).reshape(-1, 4)
+
     def _strings(self):
+        n = self.h["strn"]
         idx = np.frombuffer(
-            self.mm, dtype="<u4", count=self.h["strn"] * 2,
-            offset=self.h["si"],
+            self.mm, dtype="<u4", count=n * 2, offset=self.h["si"],
         ).reshape(-1, 2)
         data = bytes(self.mm[self.h["sd"]:self.h["sd"] + self.h["sl"]])
         return [
@@ -102,7 +147,10 @@ class IntelDb:
         ]
 
     def _weights(self):
-        bits = self.values[:, 0][self.v4_vals]
+        all_vals = np.concatenate([self.vals, self.lvals])
+        if len(all_vals) == 0:
+            return {f: SEVERITY[f] for f in FLAGS}
+        bits = self.values[:, 0][all_vals]
         total = max(len(bits), 1)
         weights = {}
         for i, name in enumerate(FLAGS):
@@ -112,29 +160,60 @@ class IntelDb:
             weights[name] = SEVERITY[name] * (1 + rarity / 24)
         return weights
 
-    def _scan(self, starts, ends, max_end, vals, ip, start_idx):
+    def _lookup_v4(self, ip):
         out = []
-        i = start_idx
-        while i > 0:
-            i -= 1
-            if max_end[i] < ip:
-                break
-            if ends[i] >= ip:
-                out.append((int(starts[i]), int(ends[i]), int(vals[i])))
+        bucket = ip >> 16
+        ip_lo = ip & 0xFFFF
+        bs = int(self.bucket_index[bucket])
+        be = int(self.bucket_index[bucket + 1])
+        if bs < be:
+            starts = self.starts_lo[bs:be]
+            lens = self.lens[bs:be]
+            vals = self.vals[bs:be]
+            mends = self.max_ends_lo[bs:be]
+            i = int(np.searchsorted(starts, ip_lo, side="right"))
+            prefix = bucket << 16
+            while i > 0:
+                i -= 1
+                if mends[i] < ip_lo:
+                    break
+                end_lo = (int(starts[i]) + int(lens[i])) & 0xFFFF
+                if end_lo >= ip_lo:
+                    out.append((
+                        prefix | int(starts[i]),
+                        prefix | end_lo,
+                        int(vals[i]),
+                    ))
+        if len(self.lstarts):
+            i = int(np.searchsorted(self.lstarts, ip, side="right"))
+            while i > 0:
+                i -= 1
+                if self.lmax[i] < ip:
+                    break
+                if self.lends[i] >= ip:
+                    out.append((
+                        int(self.lstarts[i]),
+                        int(self.lends[i]),
+                        int(self.lvals[i]),
+                    ))
         return out
 
-    def _hits(self, ip, v4):
-        if v4:
-            i = int(np.searchsorted(self.v4_starts, ip, side="right"))
-            return self._scan(
-                self.v4_starts, self.v4_ends, self.v4_max, self.v4_vals, ip, i,
-            )
+    def _lookup_v6(self, ip):
         if not self.v6_starts:
             return []
+        out = []
         i = bisect_right(self.v6_starts, ip)
-        return self._scan(
-            self.v6_starts, self.v6_ends, self.v6_max, self.v6_vals, ip, i,
-        )
+        while i > 0:
+            i -= 1
+            if self.v6_max[i] < ip:
+                break
+            if self.v6_ends[i] >= ip:
+                out.append((
+                    int(self.v6_starts[i]),
+                    int(self.v6_ends[i]),
+                    int(self.v6_vals[i]),
+                ))
+        return out
 
     def _render(self, start, end, val_id, formatter):
         bits, provider_id, source_id, _ = self.values[val_id]
@@ -151,13 +230,12 @@ class IntelDb:
 
     def lookup(self, ip_str):
         addr = ipaddress.ip_address(ip_str)
-        formatter = (
-            ipaddress.IPv4Address if addr.version == 4 else ipaddress.IPv6Address
-        )
-        matches = [
-            self._render(s, e, v, formatter)
-            for s, e, v in self._hits(int(addr), addr.version == 4)
-        ]
+        is_v4 = addr.version == 4
+        formatter = (ipaddress.IPv4Address if is_v4
+                     else ipaddress.IPv6Address)
+        raw = (self._lookup_v4(int(addr)) if is_v4
+               else self._lookup_v6(int(addr)))
+        matches = [self._render(s, e, v, formatter) for s, e, v in raw]
         matches.sort(key=lambda m: -m["weight"])
         return self._summary(ip_str, matches)
 
