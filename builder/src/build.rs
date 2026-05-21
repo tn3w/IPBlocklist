@@ -175,9 +175,7 @@ fn provider_for(spec: &FeedSpec, asn: u32) -> String {
     if let Some(p) = &spec.provider {
         return p.clone();
     }
-    crate::asn_db::lookup_org(asn)
-        .map(|s| crate::asn_db::normalize(&s))
-        .unwrap_or_default()
+    crate::asn_db::lookup_org(asn).unwrap_or_default()
 }
 
 pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult>> {
