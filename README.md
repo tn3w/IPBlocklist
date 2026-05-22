@@ -1,6 +1,6 @@
 # IPBlocklist
 
-[![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/build.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
 [![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 
