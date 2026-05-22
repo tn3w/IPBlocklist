@@ -1,8 +1,11 @@
-use ipintel::{build, db};
+use ipintel::{blocklist, build, db};
 use db::Result;
 use std::net::IpAddr;
 use std::path::PathBuf;
 use std::time::Instant;
+
+const DEFAULT_THRESHOLD: u8 = 40;
+const DEFAULT_EXT: &str = "netset";
 
 const FLAG_NAMES: &[&str] = &[
     "vpn", "proxy", "tor", "malware", "c2", "scanner", "brute_force",
@@ -22,6 +25,28 @@ fn db_path() -> PathBuf {
         return PathBuf::from(p);
     }
     PathBuf::from("intel.bin")
+}
+
+fn blocklist_path() -> PathBuf {
+    if let Ok(p) = std::env::var("BLOCKLIST_FILE") {
+        return PathBuf::from(p);
+    }
+    PathBuf::from(format!("blocklist.{DEFAULT_EXT}"))
+}
+
+fn parse_format(s: &str) -> Result<blocklist::Format> {
+    match s {
+        "range" | "ranges" => Ok(blocklist::Format::Range),
+        "cidr" | "netset" => Ok(blocklist::Format::Cidr),
+        _ => Err(format!("unknown format: {s} (range|cidr)").into()),
+    }
+}
+
+fn threshold_env() -> u8 {
+    std::env::var("BLOCKLIST_THRESHOLD")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(DEFAULT_THRESHOLD)
 }
 
 fn feeds_path() -> PathBuf {
@@ -45,6 +70,62 @@ fn cmd_update() -> Result<()> {
     let size = std::fs::metadata(&out)?.len();
     println!("built in {:.2}s, {:.2} MB",
         t.elapsed().as_secs_f64(), size as f64 / 1e6);
+
+    let threshold = threshold_env();
+    let bl = blocklist_path();
+    let t2 = Instant::now();
+    let db = db::Db::open(&out)?;
+    let s = blocklist::build(&db, &bl, threshold, blocklist::Format::Cidr)?;
+    println!(
+        "blocklist: {} (threshold={threshold}) → {} v4 + {} v6 CIDRs, \
+         {} IPs, {:.2} KB in {:.2}s",
+        bl.display(), s.v4_lines, s.v6_lines, s.v4_ips,
+        s.bytes as f64 / 1024.0, t2.elapsed().as_secs_f64(),
+    );
+    Ok(())
+}
+
+fn cmd_blocklist(threshold: u8, fmt: blocklist::Format) -> Result<()> {
+    let db = db::Db::open(&db_path())?;
+    let out = blocklist_path();
+    let t = Instant::now();
+    let s = blocklist::build(&db, &out, threshold, fmt)?;
+    println!(
+        "{} (threshold={threshold}) → {} v4 + {} v6 lines, \
+         {} IPs, {:.2} KB in {:.2}s",
+        out.display(), s.v4_lines, s.v6_lines, s.v4_ips,
+        s.bytes as f64 / 1024.0, t.elapsed().as_secs_f64(),
+    );
+    Ok(())
+}
+
+fn cmd_analyze() -> Result<()> {
+    let db = db::Db::open(&db_path())?;
+    let rows = blocklist::analyze(&db);
+    println!("score | ranges_>= | v4_ips_>=");
+    for (sc, cr, ci) in rows {
+        println!("{sc:5} | {cr:9} | {ci:11}");
+    }
+    Ok(())
+}
+
+fn cmd_sweep() -> Result<()> {
+    let db = db::Db::open(&db_path())?;
+    let thresholds = [5u8, 10, 15, 25, 30, 35, 40, 45, 55, 65, 70, 75, 95];
+    let tmp = PathBuf::from("blocklist.sweep.tmp");
+    println!("threshold | range_bytes | cidr_bytes | range_lines | cidr_lines | v4_ips");
+    for t in thresholds {
+        let r = blocklist::build(&db, &tmp, t, blocklist::Format::Range)?;
+        let c = blocklist::build(&db, &tmp, t, blocklist::Format::Cidr)?;
+        println!(
+            "{t:9} | {:11} | {:10} | {:11} | {:10} | {}",
+            r.bytes, c.bytes,
+            r.v4_lines + r.v6_lines,
+            c.v4_lines + c.v6_lines,
+            r.v4_ips,
+        );
+    }
+    let _ = std::fs::remove_file(&tmp);
     Ok(())
 }
 
@@ -168,7 +249,10 @@ fn cmd_bench(n: usize) -> Result<()> {
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
-        eprintln!("usage: builder <update|check IP|bench [N]>");
+        eprintln!(
+            "usage: builder <update|check IP|bench [N]|\
+             blocklist [threshold]|analyze|sweep>"
+        );
         std::process::exit(1);
     }
     match args[1].as_str() {
@@ -181,6 +265,16 @@ fn main() -> Result<()> {
             let n = args.get(2).and_then(|s| s.parse().ok()).unwrap_or(100_000);
             cmd_bench(n)
         }
+        "blocklist" => {
+            let t = args.get(2).and_then(|s| s.parse().ok())
+                .unwrap_or_else(threshold_env);
+            let fmt = args.get(3).map(|s| parse_format(s))
+                .transpose()?
+                .unwrap_or(blocklist::Format::Cidr);
+            cmd_blocklist(t, fmt)
+        }
+        "analyze" => cmd_analyze(),
+        "sweep" => cmd_sweep(),
         c => Err(format!("unknown command: {c}").into()),
     }
 }

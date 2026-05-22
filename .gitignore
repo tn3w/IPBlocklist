@@ -206,7 +206,7 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-# Blocklist
+# Blocklist (deprecated)
 blocklist.bin
 blocklist.txt
 
@@ -215,5 +215,8 @@ docs/data/
 # Markdown files except README.md
 *.md
 !README.md
+
+# Intel binary
 intel.bin
+blocklist.netset
 request_cache/

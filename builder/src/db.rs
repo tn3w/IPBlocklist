@@ -551,6 +551,31 @@ impl Db {
     pub fn v4_large_starts(&self) -> &[u32] { &self.v4_large_starts }
     pub fn v4_large_ends(&self) -> &[u32] { &self.v4_large_ends }
 
+    pub fn iter_v4<F: FnMut(u32, u32, u32)>(&self, mut f: F) {
+        for b in 0..V4_BUCKETS {
+            let s = self.v4_bucket_index[b] as usize;
+            let e = self.v4_bucket_index[b + 1] as usize;
+            let prefix = (b as u32) << 16;
+            for i in s..e {
+                let lo = self.v4_starts_lo[i];
+                let end_lo = lo.wrapping_add(self.v4_lens[i]);
+                let flags = self.val_flags(self.v4_vals[i] as u32);
+                f(prefix | lo as u32, prefix | end_lo as u32, flags);
+            }
+        }
+        for i in 0..self.v4_large_starts.len() {
+            let flags = self.val_flags(self.v4_large_vals[i] as u32);
+            f(self.v4_large_starts[i], self.v4_large_ends[i], flags);
+        }
+    }
+
+    pub fn iter_v6<F: FnMut(u128, u128, u32)>(&self, mut f: F) {
+        for i in 0..self.v6_starts.len() {
+            let flags = self.val_flags(self.v6_vals[i] as u32);
+            f(self.v6_starts[i], self.v6_ends[i], flags);
+        }
+    }
+
     #[inline]
     fn val_flags(&self, val_id: u32) -> u32 {
         let o = val_id as usize * 16;

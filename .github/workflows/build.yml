@@ -10,7 +10,6 @@ on:
       - 'feeds-intel.json'
       - 'aggregator.py'
       - 'builder/**'
-      - 'cidr_minimizer/**'
   workflow_dispatch:
 
 jobs:
@@ -29,10 +28,6 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Build cidr_minimizer
-        run: cargo build --release
-        working-directory: cidr_minimizer
-
       - name: Build intel builder
         run: cargo build --release
         working-directory: builder
@@ -49,11 +44,13 @@ jobs:
         env:
           ASNDB_FILE: asndb-mini.bin
 
-      - name: Build intel.bin
+      - name: Build intel.bin + blocklist.netset
         run: ./builder/target/release/builder update
         env:
           FEEDS_FILE: feeds-intel.json
           OUT_FILE: intel.bin
+          BLOCKLIST_FILE: blocklist.netset
+          BLOCKLIST_THRESHOLD: '40'
           ASNDB_FILE: asndb-mini.bin
           ASN_PROVIDER_FILE: asn-provider.tsv
           PEERINGDB_API_KEY: ${{ secrets.PEERINGDB_API_KEY }}
@@ -67,7 +64,7 @@ jobs:
 
           gh release create "$TAG_NAME" \
             blocklist.bin \
-            blocklist.txt \
+            blocklist.netset \
             intel.bin \
             asns.json \
             --title "Blocklist Update - $TIMESTAMP" \
@@ -75,14 +72,14 @@ jobs:
 
           **Files:**
           - \`blocklist.bin\` - Legacy scored blocklist (binary format)
-          - \`blocklist.txt\` - Scored and CIDR-minimized blocklist (text format)
+          - \`blocklist.netset\` - CIDR netset (FireHOL-style header, threshold 40, plain text)
           - \`intel.bin\` - Threat-intel SoA database built from feeds-intel.json
           - \`asns.json\` - Normalized ASN lists keyed by feed name
 
           **Download:**
           \`\`\`bash
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.bin
-          wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.txt
+          wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/blocklist.netset
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/intel.bin
           wget https://github.com/tn3w/IPBlocklist/releases/download/$TAG_NAME/asns.json
           \`\`\`"

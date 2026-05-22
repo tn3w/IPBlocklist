@@ -6,7 +6,6 @@ import os
 import re
 import ssl
 import struct
-import subprocess
 import threading
 import time
 import urllib.request
@@ -536,82 +535,6 @@ def main():
     write_blocklist_bin(processed, source_map)
 
     print(f"Saved blocklist.bin with {len(processed)} feeds")
-
-    print("Generating scored blocklist.txt...")
-    generate_blocklist_txt(sources, processed)
-
-
-def generate_blocklist_txt(sources, processed):
-    score_map = {
-        s["name"]: s.get("base_score", 0.5) * s.get("confidence", 0.5) for s in sources
-    }
-    score_map["proxy_pub"] = 0.7 * 0.9
-
-    threshold = 0.5
-    coverage_pct = 90
-
-    ipv4_ranges = []
-    ipv6_ranges = []
-
-    for feed_name, ranges in processed.items():
-        score = score_map.get(feed_name, 0.3)
-        for start, end in ranges:
-            if end <= 0xFFFFFFFF:
-                ipv4_ranges.append((start, end, score))
-            else:
-                ipv6_ranges.append((start, end, score))
-
-    buf = bytearray()
-    buf.extend(struct.pack("<f", threshold))
-    buf.extend(struct.pack("<B", coverage_pct))
-
-    buf.extend(struct.pack("<I", len(ipv4_ranges)))
-    for start, end, score in ipv4_ranges:
-        buf.extend(struct.pack("<IIf", start, end, score))
-
-    buf.extend(struct.pack("<I", len(ipv6_ranges)))
-    for start, end, score in ipv6_ranges:
-        buf.extend(
-            struct.pack(
-                "<16s16sf",
-                start.to_bytes(16, "little"),
-                end.to_bytes(16, "little"),
-                score,
-            )
-        )
-
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    binary = os.path.join(
-        script_dir, "cidr_minimizer", "target", "release", "cidr_minimizer"
-    )
-
-    if not os.path.exists(binary):
-        print(f"Building cidr_minimizer...")
-        subprocess.run(
-            ["cargo", "build", "--release"],
-            cwd=os.path.join(script_dir, "cidr_minimizer"),
-            check=True,
-        )
-
-    print(
-        f"Running cidr_minimizer with {len(ipv4_ranges)} IPv4 + {len(ipv6_ranges)} IPv6 scored ranges..."
-    )
-    result = subprocess.run(
-        [binary],
-        input=bytes(buf),
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        print(f"cidr_minimizer failed: {result.stderr.decode()}")
-        return
-
-    output = result.stdout.decode()
-    lines = [l for l in output.splitlines() if l.strip()]
-
-    with open("blocklist.txt", "w") as f:
-        f.write("\n".join(lines) + "\n")
-
-    print(f"Saved blocklist.txt with {len(lines)} entries")
 
 
 if __name__ == "__main__":
