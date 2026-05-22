@@ -4,7 +4,7 @@
 [![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 
-Aggregates IP/ASN threat intelligence into a single ~30 MB mmap-friendly
+Aggregates IP/ASN threat intelligence into a single ~20 MB mmap-friendly
 database with 0–100 maliciousness scoring (consumer-side).
 
 ```bash
