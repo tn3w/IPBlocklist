@@ -263,7 +263,6 @@ def download_asn_feed(source):
             asn = futures[future]
             asn_prefixes = future.result()
             prefixes.extend(asn_prefixes)
-            print(f"Resolved AS{asn}: {len(asn_prefixes)} prefixes")
 
     return source["name"], prefixes, unique_asns
 
