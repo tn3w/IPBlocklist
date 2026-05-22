@@ -6,7 +6,122 @@ use std::fs;
 use std::io::Read;
 use std::net::IpAddr;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
+
+struct AsnDb {
+    names: HashMap<u32, String>,
+    v4: HashMap<u32, Vec<(u32, u32)>>,
+    v6: HashMap<u32, Vec<(u128, u128)>>,
+}
+
+static ASN_DB: OnceLock<AsnDb> = OnceLock::new();
+
+fn asn_env_path(key: &str, fallbacks: &[&str]) -> PathBuf {
+    if let Some(p) = std::env::var_os(key) {
+        return PathBuf::from(p);
+    }
+    for c in fallbacks {
+        let p = PathBuf::from(c);
+        if p.exists() { return p; }
+    }
+    PathBuf::from(fallbacks[0])
+}
+
+fn parse_provider_tsv(text: &str) -> HashMap<u32, String> {
+    let mut m = HashMap::new();
+    for line in text.lines() {
+        let Some((a, n)) = line.split_once('\t') else { continue };
+        let Ok(asn) = a.trim().parse::<u32>() else { continue };
+        let name = n.trim();
+        if !name.is_empty() {
+            m.insert(asn, name.to_string());
+        }
+    }
+    m
+}
+
+fn cidr_to_range(cidr: &str) -> Option<(IpAddr, IpAddr)> {
+    let (ip, p) = cidr.split_once('/')?;
+    let ip: IpAddr = ip.parse().ok()?;
+    let prefix: u32 = p.parse().ok()?;
+    match ip {
+        IpAddr::V4(a) => {
+            if prefix > 32 { return None; }
+            let v = u32::from(a);
+            let mask: u32 = if prefix == 0 { 0 } else { u32::MAX << (32 - prefix) };
+            let net = v & mask;
+            let bcast = net | !mask;
+            Some((IpAddr::from(net.to_be_bytes()), IpAddr::from(bcast.to_be_bytes())))
+        }
+        IpAddr::V6(a) => {
+            if prefix > 128 { return None; }
+            let v = u128::from(a);
+            let mask: u128 = if prefix == 0 { 0 } else { u128::MAX << (128 - prefix) };
+            let net = v & mask;
+            let bcast = net | !mask;
+            Some((IpAddr::from(net.to_be_bytes()), IpAddr::from(bcast.to_be_bytes())))
+        }
+    }
+}
+
+fn parse_prefixes_csv(
+    text: &str,
+) -> (HashMap<u32, Vec<(u32, u32)>>, HashMap<u32, Vec<(u128, u128)>>) {
+    let mut v4: HashMap<u32, Vec<(u32, u32)>> = HashMap::new();
+    let mut v6: HashMap<u32, Vec<(u128, u128)>> = HashMap::new();
+    for (i, line) in text.lines().enumerate() {
+        if i == 0 && line.starts_with("asn,") { continue; }
+        let mut it = line.splitn(3, ',');
+        let Some(a) = it.next() else { continue };
+        let Some(cidr) = it.next() else { continue };
+        let Ok(asn) = a.trim().parse::<u32>() else { continue };
+        let Some((s, e)) = cidr_to_range(cidr.trim()) else { continue };
+        match (s, e) {
+            (IpAddr::V4(s), IpAddr::V4(e)) => {
+                v4.entry(asn).or_default().push((u32::from(s), u32::from(e)));
+            }
+            (IpAddr::V6(s), IpAddr::V6(e)) => {
+                v6.entry(asn).or_default().push((u128::from(s), u128::from(e)));
+            }
+            _ => {}
+        }
+    }
+    (v4, v6)
+}
+
+fn asn_db_init() -> Result<()> {
+    let provider = asn_env_path(
+        "ASN_PROVIDER_FILE",
+        &["asn-provider.tsv", "../asn-provider.tsv"],
+    );
+    let prefixes = asn_env_path(
+        "ASN_PREFIXES_FILE",
+        &["asn-prefixes.csv", "../asn-prefixes.csv"],
+    );
+    eprintln!("loading asn provider: {}", provider.display());
+    eprintln!("loading asn prefixes: {}", prefixes.display());
+    let names = parse_provider_tsv(
+        &fs::read_to_string(&provider)
+            .map_err(|e| format!("{}: {e}", provider.display()))?,
+    );
+    let (v4, v6) = parse_prefixes_csv(
+        &fs::read_to_string(&prefixes)
+            .map_err(|e| format!("{}: {e}", prefixes.display()))?,
+    );
+    let _ = ASN_DB.set(AsnDb { names, v4, v6 });
+    Ok(())
+}
+
+fn asn_lookup_org(asn: u32) -> Option<String> {
+    ASN_DB.get()?.names.get(&asn).cloned()
+}
+
+fn asn_prefixes_for(asn: u32) -> (Vec<(u32, u32)>, Vec<(u128, u128)>) {
+    let Some(db) = ASN_DB.get() else { return (Vec::new(), Vec::new()); };
+    let v4 = db.v4.get(&asn).cloned().unwrap_or_default();
+    let v6 = db.v6.get(&asn).cloned().unwrap_or_default();
+    (v4, v6)
+}
 
 const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) \
     AppleWebKit/537.36 (KHTML, like Gecko) \
@@ -175,7 +290,7 @@ fn provider_for(spec: &FeedSpec, asn: u32) -> String {
     if let Some(p) = &spec.provider {
         return p.clone();
     }
-    crate::asn_db::lookup_org(asn).unwrap_or_default()
+    asn_lookup_org(asn).unwrap_or_default()
 }
 
 pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult>> {
@@ -215,7 +330,7 @@ pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult
     let mut groups: HashMap<String, (Vec<(u32, u32)>, Vec<(u128, u128)>)> = HashMap::new();
     for asn in asn_set {
         let provider = provider_for(spec, asn);
-        let (v4, v6) = crate::asn_db::prefixes_for(asn);
+        let (v4, v6) = asn_prefixes_for(asn);
         let entry = groups.entry(provider).or_default();
         entry.0.extend(v4);
         entry.1.extend(v6);
@@ -241,7 +356,7 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
     let flag_names = ff.flags.clone();
 
     if ff.feeds.iter().any(|f| f.is_asn) {
-        crate::asn_db::init()?;
+        asn_db_init()?;
     }
 
     let queue: Mutex<Vec<(usize, FeedSpec)>> =

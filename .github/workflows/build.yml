@@ -37,10 +37,12 @@ jobs:
         run: cargo build --release
         working-directory: builder
 
-      - name: Download asndb-mini.bin
+      - name: Download ASN data
         run: |
-          curl -fL -o asndb-mini.bin \
-            https://github.com/tn3w/ASNDB/releases/latest/download/asndb-mini.bin
+          base=https://github.com/tn3w/ASNDB/releases/latest/download
+          curl -fL -o asndb-mini.bin    "$base/asndb-mini.bin"
+          curl -fL -o asn-provider.tsv  "$base/asn-provider.tsv"
+          curl -fL -o asn-prefixes.csv  "$base/asn-prefixes.csv"
 
       - name: Download and process feeds (legacy)
         run: python aggregator.py
@@ -52,7 +54,8 @@ jobs:
         env:
           FEEDS_FILE: feeds-intel.json
           OUT_FILE: intel.bin
-          ASNDB_FILE: asndb-mini.bin
+          ASN_PROVIDER_FILE: asn-provider.tsv
+          ASN_PREFIXES_FILE: asn-prefixes.csv
           PEERINGDB_API_KEY: ${{ secrets.PEERINGDB_API_KEY }}
 
       - name: Create Release

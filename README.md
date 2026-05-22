@@ -101,8 +101,9 @@ Produces:
 - `target/release/libipintel.so` / `libipintel.a` — C-ABI library
 - `include/ipintel.h` — C header
 
-ASN→prefix and ASN→org are resolved offline from an `asndb-mini.bin`
-(via `ASNDB_FILE` env, downloaded by the workflow). HTTP cache:
+ASN→org from `asn-provider.tsv` (env `ASN_PROVIDER_FILE`),
+ASN→prefix from `asn-prefixes.csv` (env `ASN_PREFIXES_FILE`).
+Both downloaded by the workflow from the ASNDB release. HTTP cache:
 `request_cache/`.
 
 ## C ABI (web-server integration)
