@@ -91,6 +91,236 @@
                 display: flex;
                 align-items: center;
                 gap: 0.75rem;
+                text-decoration: none;
+                color: inherit;
+                cursor: pointer;
+            }
+            .logo-group:hover .logo-text {
+                color: var(--accent);
+            }
+            .logo-text {
+                transition: color 0.2s;
+            }
+
+            #home.hidden {
+                display: none;
+            }
+
+            .hero-stats {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+                gap: 1rem;
+                margin: 1rem 0 3rem;
+            }
+            .hero-stat {
+                padding: 1.5rem 0;
+                border-top: 1px solid var(--border);
+            }
+            .hero-stat .num {
+                font-family: var(--mono);
+                font-size: 2.1rem;
+                font-weight: 700;
+                letter-spacing: -0.04em;
+                background: linear-gradient(135deg, #fff, #818cf8);
+                -webkit-background-clip: text;
+                background-clip: text;
+                color: transparent;
+                line-height: 1;
+                margin-bottom: 0.5rem;
+            }
+            .hero-stat .lbl {
+                font-size: 0.78rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.1em;
+                font-weight: 600;
+            }
+
+            .features {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 1rem;
+                margin-bottom: 3rem;
+            }
+            .feature {
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 1.5rem;
+                transition: border-color 0.2s, transform 0.2s;
+            }
+            .feature:hover {
+                border-color: var(--border-hover);
+                transform: translateY(-2px);
+            }
+            .feature-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+                background: var(--surface-2);
+                border: 1px solid var(--border);
+                display: grid;
+                place-items: center;
+                margin-bottom: 1rem;
+                color: var(--accent);
+            }
+            .feature-icon svg {
+                width: 18px;
+                height: 18px;
+            }
+            .feature h3 {
+                font-size: 0.98rem;
+                font-weight: 600;
+                margin-bottom: 0.35rem;
+                letter-spacing: -0.01em;
+            }
+            .feature p {
+                font-size: 0.83rem;
+                color: var(--text-dim);
+                line-height: 1.5;
+            }
+
+            .section-head {
+                font-size: 0.75rem;
+                color: var(--text-muted);
+                text-transform: uppercase;
+                letter-spacing: 0.12em;
+                font-weight: 600;
+                margin-bottom: 1.2rem;
+            }
+
+            .scale {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 0.5rem;
+                margin-bottom: 3rem;
+            }
+            .scale-item {
+                padding: 1.1rem 1rem;
+                background: var(--surface);
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                position: relative;
+                overflow: hidden;
+            }
+            .scale-item::before {
+                content: '';
+                position: absolute;
+                inset: 0 0 auto 0;
+                height: 3px;
+                background: var(--bar);
+            }
+            .scale-item .lvl {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                color: var(--bar);
+                font-weight: 600;
+                margin-bottom: 0.3rem;
+                margin-top: 0.3rem;
+            }
+            .scale-item .rng {
+                font-family: var(--mono);
+                font-size: 1.3rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+                letter-spacing: -0.02em;
+            }
+            .scale-item .ex {
+                font-size: 0.72rem;
+                color: var(--text-muted);
+                font-family: var(--mono);
+                line-height: 1.4;
+            }
+
+            .steps {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+                gap: 0;
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                margin-bottom: 3rem;
+                overflow: hidden;
+                background: var(--surface);
+            }
+            .step {
+                padding: 1.5rem;
+                border-right: 1px solid var(--border);
+            }
+            .step:last-child {
+                border-right: none;
+            }
+            .step .n {
+                font-family: var(--mono);
+                font-size: 0.78rem;
+                color: var(--accent);
+                font-weight: 600;
+                margin-bottom: 0.8rem;
+            }
+            .step .t {
+                font-size: 0.95rem;
+                font-weight: 600;
+                margin-bottom: 0.3rem;
+            }
+            .step .d {
+                font-size: 0.82rem;
+                color: var(--text-dim);
+            }
+
+            .cta {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 1rem;
+                padding: 1.8rem 2rem;
+                background: linear-gradient(135deg,
+                    rgba(99,102,241,0.08), rgba(99,102,241,0.02));
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                margin-bottom: 2rem;
+                flex-wrap: wrap;
+            }
+            .cta-text h3 {
+                font-size: 1.05rem;
+                font-weight: 600;
+                margin-bottom: 0.25rem;
+                letter-spacing: -0.01em;
+            }
+            .cta-text p {
+                font-size: 0.85rem;
+                color: var(--text-dim);
+            }
+            .cta-btn {
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                background: var(--accent);
+                color: #fff;
+                text-decoration: none;
+                padding: 0.7rem 1.3rem;
+                border-radius: var(--radius);
+                font-weight: 600;
+                font-size: 0.88rem;
+                transition: background 0.2s;
+            }
+            .cta-btn:hover {
+                background: var(--accent-dim);
+            }
+            .cta-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            @media (max-width: 600px) {
+                .scale {
+                    grid-template-columns: 1fr 1fr;
+                }
+                .step {
+                    border-right: none;
+                    border-bottom: 1px solid var(--border);
+                }
+                .step:last-child {
+                    border-bottom: none;
+                }
             }
 
             .logo-icon {
@@ -577,10 +807,10 @@
         <div class="glow"></div>
 
         <header>
-            <div class="logo-group">
+            <a class="logo-group" id="logoHome" href="#" aria-label="Home">
                 <div class="logo-icon">IP</div>
                 <div class="logo-text">IPBlocklist <span>Lookup</span></div>
-            </div>
+            </a>
             <a
                 class="github-link"
                 href="https://github.com/tn3w/IPBlocklist"
@@ -632,6 +862,127 @@
             <div id="results">
                 <div id="resultContent"></div>
             </div>
+
+            <div id="home">
+                <div class="hero-stats">
+                    <div class="hero-stat">
+                        <div class="num" id="heroV4">—</div>
+                        <div class="lbl">IPv4 ranges</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num" id="heroV6">—</div>
+                        <div class="lbl">IPv6 ranges</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num">160+</div>
+                        <div class="lbl">Threat feeds</div>
+                    </div>
+                    <div class="hero-stat">
+                        <div class="num">0ms</div>
+                        <div class="lbl">Server roundtrip</div>
+                    </div>
+                </div>
+
+                <div class="section-head">Features</div>
+                <div class="features">
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <h3>Local-first</h3>
+                        <p>Runs in your browser. Nothing sent. No tracking.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg>
+                        </div>
+                        <h3>Fast</h3>
+                        <p>Binary-packed index. Sub-ms lookups, millions of ranges.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+                        </div>
+                        <h3>IPv4 + IPv6</h3>
+                        <p>Full dual-stack coverage. Same query, same result.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                        </div>
+                        <h3>Daily refresh</h3>
+                        <p>Feeds rebuilt every 24h. Always recent.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>
+                        </div>
+                        <h3>Open source</h3>
+                        <p>Apache 2.0. Audit, fork, self-host the entire pipeline.</p>
+                    </div>
+                    <div class="feature">
+                        <div class="feature-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v6H4zM4 14h16v6H4z"/><circle cx="7" cy="7" r="1" fill="currentColor"/><circle cx="7" cy="17" r="1" fill="currentColor"/></svg>
+                        </div>
+                        <h3>Drop-in data</h3>
+                        <p>One <code style="font-family:var(--mono);font-size:0.78rem">intel.bin</code> file. Use anywhere.</p>
+                    </div>
+                </div>
+
+                <div class="section-head">Risk scale</div>
+                <div class="scale">
+                    <div class="scale-item" style="--bar:#c7d2fe;--barBg:rgba(199,210,254,0.9)">
+                        <div class="rng">60+</div>
+                        <div class="lvl">High</div>
+                        <div class="ex">malware · c2 · compromised</div>
+                    </div>
+                    <div class="scale-item" style="--bar:#818cf8;--barBg:rgba(129,140,248,0.7)">
+                        <div class="rng">35+</div>
+                        <div class="lvl">Medium</div>
+                        <div class="ex">scanner · tor · spam</div>
+                    </div>
+                    <div class="scale-item" style="--bar:#6366f1;--barBg:rgba(99,102,241,0.5)">
+                        <div class="rng">15+</div>
+                        <div class="lvl">Low</div>
+                        <div class="ex">vpn · proxy · datacenter</div>
+                    </div>
+                    <div class="scale-item" style="--bar:#4338ca;--barBg:rgba(67,56,202,0.3)">
+                        <div class="rng">0</div>
+                        <div class="lvl">Clean</div>
+                        <div class="ex">no detections</div>
+                    </div>
+                </div>
+
+                <div class="section-head">How it works</div>
+                <div class="steps">
+                    <div class="step">
+                        <div class="n">01</div>
+                        <div class="t">Paste IP</div>
+                        <div class="d">IPv4 or IPv6, any format.</div>
+                    </div>
+                    <div class="step">
+                        <div class="n">02</div>
+                        <div class="t">Local lookup</div>
+                        <div class="d">Binary index, zero requests.</div>
+                    </div>
+                    <div class="step">
+                        <div class="n">03</div>
+                        <div class="t">Get verdict</div>
+                        <div class="d">Score, flags, matching feeds.</div>
+                    </div>
+                </div>
+
+                <div class="cta">
+                    <div class="cta-text">
+                        <h3>Ship it in your stack</h3>
+                        <p>Grab intel.bin or integrate the feeds.</p>
+                    </div>
+                    <a class="cta-btn" href="https://github.com/tn3w/IPBlocklist" target="_blank" rel="noopener">
+                        View on GitHub
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M7 7h10v10"/></svg>
+                    </a>
+                </div>
+            </div>
         </main>
 
         <footer>IPBlocklist Open-source threat intelligence aggregator</footer>
@@ -671,6 +1022,21 @@
             const queryInput = document.getElementById('queryInput');
             const resultsDiv = document.getElementById('results');
             const resultContent = document.getElementById('resultContent');
+            const homeDiv = document.getElementById('home');
+            const logoHome = document.getElementById('logoHome');
+
+            function goHome() {
+                queryInput.value = '';
+                resultContent.innerHTML = '';
+                resultsDiv.classList.remove('visible');
+                homeDiv.classList.remove('hidden');
+                queryInput.focus();
+            }
+
+            logoHome.addEventListener('click', (event) => {
+                event.preventDefault();
+                goHome();
+            });
 
             function setStatus(state, text) {
                 statusBar.className = 'status-bar ' + state;
@@ -1284,6 +1650,7 @@
                 lookupBtn.textContent = 'Searching…';
                 resultContent.innerHTML = '';
                 resultsDiv.classList.add('visible');
+                homeDiv.classList.add('hidden');
 
                 try {
                     let hits;
@@ -1346,12 +1713,11 @@
                     db = parseIntel(buffer);
 
                     const v4Total = db.starts_lo.length + db.l_starts.length;
-                    setStatus(
-                        'ready',
-                        `Ready ${v4Total.toLocaleString()} v4 + ` +
-                            `${db.v6_starts.length.toLocaleString()} v6 ranges, ` +
-                            `${db.strings.length.toLocaleString()} strings`
-                    );
+                    document.getElementById('heroV4').textContent =
+                        v4Total.toLocaleString();
+                    document.getElementById('heroV6').textContent =
+                        db.v6_starts.length.toLocaleString();
+                    setStatus('ready', 'Ready');
                     lookupBtn.disabled = false;
                     queryInput.focus();
                 } catch (error) {
