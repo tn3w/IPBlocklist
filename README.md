@@ -1,6 +1,6 @@
 # IPBlocklist
 
-[![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/build.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
+[![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/aggregate-feeds.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
 [![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 
@@ -101,9 +101,8 @@ Produces:
 - `target/release/libipintel.so` / `libipintel.a` — C-ABI library
 - `include/ipintel.h` — C header
 
-ASN→org from `asn-provider.tsv` (env `ASN_PROVIDER_FILE`),
-ASN→prefix from `asn-prefixes.csv` (env `ASN_PREFIXES_FILE`).
-Both downloaded by the workflow from the ASNDB release. HTTP cache:
+ASN→prefix and ASN→org are resolved offline from an `asndb-mini.bin`
+(via `ASNDB_FILE` env, downloaded by the workflow). HTTP cache:
 `request_cache/`.
 
 ## C ABI (web-server integration)
