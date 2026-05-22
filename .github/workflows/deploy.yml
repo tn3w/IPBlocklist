@@ -1,15 +1,15 @@
-name: Deploy Demo Page
+name: Deploy
 
 on:
   push:
     branches: [master]
     paths:
       - docs/**
-      - .github/workflows/deploy-pages.yml
+      - .github/workflows/deploy.yml
   release:
     types: [published]
   workflow_run:
-    workflows: [Update Feeds]
+    workflows: [Build]
     types: [completed]
   workflow_dispatch:
 

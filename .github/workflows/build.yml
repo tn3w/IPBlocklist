@@ -1,4 +1,4 @@
-name: Update Feeds
+name: Build
 
 on:
   schedule:
