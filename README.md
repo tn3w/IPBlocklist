@@ -4,7 +4,7 @@
 [![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 
-Aggregated IP/ASN threat intel. ~20 MB mmap DB + ~5.4 MB netset blocklist.
+Aggregated IP/ASN threat intel. ~20 MB mmap DB + ~5 MB netset blocklist.
 Consumer-side 0-100 scoring.
 
 ```bash
@@ -110,6 +110,12 @@ optional `provider`.
 ```bash
 python3 lookup.py 185.220.101.1
 ```
+
+## golf/
+
+Compact, self-contained ports of the loader+lookup across many languages.
+Same JSON output as `lookup.py`, same scoring. Run `intel.<ext>` directly
+(or compile per the language's conventions); each script reads `../intel.bin`.
 
 Severities: `malware`/`c2`=95, `compromised`=75, `brute_force`=70,
 `spammer`=65, `scanner`=55, `tor`=45, `bot`=40, `anonymizer`=35,

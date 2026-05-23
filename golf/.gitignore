@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+
+# Rust
+/target/
+Cargo.lock
+
+# .NET
+/bin/
+/obj/
+
+# Java / Kotlin / Scala
+*.class
+*.jar
+
+# C / C++ / D / Crystal / Nim / Zig in-tree binaries
+*.o
+*.out
+a.out
+/intel
+intel_c
+intel_cpp
+nimcache/
+
+# Zig
+zig-out/
+.zig-cache/
+
+# Haskell
+*.hi
+*.dyn_hi
+*.dyn_o
+
+# Erlang
+*.beam
+
+# Elixir
+/_build/
+
+# Node / TS
+node_modules/
+*.tsbuildinfo
