@@ -362,60 +362,6 @@ def read_varint(f):
         shift += 7
 
 
-def download_proxy_types():
-    url = "https://github.com/tn3w/IP2X/releases/latest/download/proxy_types.bin"
-    print(f"Downloading proxy_types.bin...")
-    try:
-        data = cached_request(url, timeout=60)
-    except Exception as error:
-        print(f"Error downloading proxy_types.bin: {error}")
-        return {}
-
-    feeds = {}
-    offset = 0
-    type_count = struct.unpack_from("<H", data, offset)[0]
-    offset += 2
-
-    for _ in range(type_count):
-        name_len = struct.unpack_from("<B", data, offset)[0]
-        offset += 1
-        proxy_type = data[offset : offset + name_len].decode("utf-8")
-        offset += name_len
-        range_count = struct.unpack_from("<I", data, offset)[0]
-        offset += 4
-
-        ranges = []
-        current = 0
-        for _ in range(range_count):
-            result = shift = 0
-            while True:
-                byte = data[offset]
-                offset += 1
-                result |= (byte & 0x7F) << shift
-                if not (byte & 0x80):
-                    break
-                shift += 7
-            current += result
-
-            result = shift = 0
-            while True:
-                byte = data[offset]
-                offset += 1
-                result |= (byte & 0x7F) << shift
-                if not (byte & 0x80):
-                    break
-                shift += 7
-            size = result
-
-            ranges.append((current, current + size))
-
-        feed_name = f"proxy_{proxy_type.lower()}"
-        feeds[feed_name] = ranges
-        print(f"Loaded {feed_name}: {len(ranges)} ranges")
-
-    return feeds
-
-
 def collect_string_table(sources, key):
     seen = []
     for source in sources:
@@ -525,11 +471,6 @@ def main():
 
     print("Processing feeds...")
     processed = process_feeds(feeds)
-
-    print("Loading proxy types...")
-    proxy_feeds = download_proxy_types()
-    for name, ranges in proxy_feeds.items():
-        processed[name] = merge_ranges(sorted(ranges))
 
     source_map = {s["name"]: s for s in sources}
     write_blocklist_bin(processed, source_map)
