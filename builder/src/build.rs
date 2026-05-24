@@ -398,6 +398,25 @@ pub fn run_feed(
         if v4.is_empty() && v6.is_empty() {
             return Err(format!("{}: 0 IPs after parsing", spec.name).into());
         }
+        if let Some(map_url) = &spec.provider_map_url {
+            let body = http_get(map_url)?;
+            let (map4, map6) = parse_provider_map(&body);
+            let mut groups = group_by_provider(spec, flags, &v4, &v6, &map4, &map6);
+            if spec.only_unique {
+                let cov = coverage.ok_or_else(||
+                    format!("{}: only_unique requires coverage", spec.name))?;
+                groups.retain_mut(|g| {
+                    if g.provider.is_some() { return true; }
+                    g.v4 = subtract_v4(&merge_v4(std::mem::take(&mut g.v4)), &cov.v4);
+                    g.v6 = subtract_v6(&merge_v6(std::mem::take(&mut g.v6)), &cov.v6);
+                    !g.v4.is_empty() || !g.v6.is_empty()
+                });
+            }
+            if groups.is_empty() {
+                return Err(format!("{}: 0 IPs after uniqueness filter", spec.name).into());
+            }
+            return Ok(groups);
+        }
         if spec.only_unique {
             let cov = coverage.ok_or_else(||
                 format!("{}: only_unique requires coverage", spec.name))?;
@@ -406,11 +425,6 @@ pub fn run_feed(
             if v4.is_empty() && v6.is_empty() {
                 return Err(format!("{}: 0 IPs after uniqueness filter", spec.name).into());
             }
-        }
-        if let Some(map_url) = &spec.provider_map_url {
-            let body = http_get(map_url)?;
-            let (map4, map6) = parse_provider_map(&body);
-            return Ok(group_by_provider(spec, flags, &v4, &v6, &map4, &map6));
         }
         return Ok(vec![FeedResult {
             name: spec.name.clone(),
