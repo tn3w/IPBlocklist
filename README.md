@@ -1,7 +1,7 @@
 # IPBlocklist
 
 [![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/build.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
-[![Intel sources](https://img.shields.io/badge/intel.bin-164_sources-blue)](feeds-intel.json)
+[![Intel sources](https://img.shields.io/badge/intel.bin-165_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
 
 Aggregated IP/ASN threat intel. ~20 MB mmap DB + ~5 MB netset blocklist.
@@ -103,7 +103,10 @@ ipintel_close(db);
 
 `{ "flags": [...], "feeds": [...] }`. Per source: `name`, `flags`
 (subset of 20), `url`+`regex`, or `is_asn: true` + `asns`/`url+regex`,
-optional `provider`.
+optional `provider`. Optional `only_unique: true` runs the feed after
+all others and keeps only ranges not already covered (partial overlaps
+split). Optional `provider_map_url` points to an IP→provider TSV
+(`#dict` + `#data` sections) that splits the feed per provider.
 
 ## Python lookup
 

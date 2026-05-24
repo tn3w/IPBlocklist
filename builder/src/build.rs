@@ -31,6 +31,10 @@ pub struct FeedSpec {
     pub is_asn: bool,
     #[serde(default)]
     pub asns: Vec<String>,
+    #[serde(default)]
+    pub only_unique: bool,
+    #[serde(default)]
+    pub provider_map_url: Option<String>,
 }
 
 const REQUEST_CACHE_DIR: &str = "request_cache";
@@ -159,6 +163,197 @@ pub struct FeedResult {
     pub v6: Vec<(u128, u128)>,
 }
 
+pub struct Coverage {
+    pub v4: Vec<(u32, u32)>,
+    pub v6: Vec<(u128, u128)>,
+}
+
+pub fn merge_v4(mut r: Vec<(u32, u32)>) -> Vec<(u32, u32)> {
+    r.sort_unstable_by_key(|x| x.0);
+    let mut out: Vec<(u32, u32)> = Vec::with_capacity(r.len());
+    for (s, e) in r {
+        if let Some(last) = out.last_mut() {
+            if s <= last.1.saturating_add(1) {
+                if e > last.1 { last.1 = e; }
+                continue;
+            }
+        }
+        out.push((s, e));
+    }
+    out
+}
+
+pub fn merge_v6(mut r: Vec<(u128, u128)>) -> Vec<(u128, u128)> {
+    r.sort_unstable_by_key(|x| x.0);
+    let mut out: Vec<(u128, u128)> = Vec::with_capacity(r.len());
+    for (s, e) in r {
+        if let Some(last) = out.last_mut() {
+            if s <= last.1.saturating_add(1) {
+                if e > last.1 { last.1 = e; }
+                continue;
+            }
+        }
+        out.push((s, e));
+    }
+    out
+}
+
+pub fn subtract_v4(target: &[(u32, u32)], cover: &[(u32, u32)]) -> Vec<(u32, u32)> {
+    let mut out = Vec::new();
+    for &(a, b) in target {
+        let mut cur = a;
+        let mut i = cover.partition_point(|c| c.1 < cur);
+        while i < cover.len() && cover[i].0 <= b {
+            if cover[i].0 > cur {
+                out.push((cur, cover[i].0 - 1));
+            }
+            if cover[i].1 == u32::MAX { cur = u32::MAX; break; }
+            cur = cover[i].1 + 1;
+            if cur > b { break; }
+            i += 1;
+        }
+        if cur <= b && !(cur == u32::MAX && i < cover.len() && cover[i].1 == u32::MAX) {
+            out.push((cur, b));
+        }
+    }
+    out
+}
+
+pub fn subtract_v6(target: &[(u128, u128)], cover: &[(u128, u128)]) -> Vec<(u128, u128)> {
+    let mut out = Vec::new();
+    for &(a, b) in target {
+        let mut cur = a;
+        let mut i = cover.partition_point(|c| c.1 < cur);
+        while i < cover.len() && cover[i].0 <= b {
+            if cover[i].0 > cur {
+                out.push((cur, cover[i].0 - 1));
+            }
+            if cover[i].1 == u128::MAX { cur = u128::MAX; break; }
+            cur = cover[i].1 + 1;
+            if cur > b { break; }
+            i += 1;
+        }
+        if cur <= b && !(cur == u128::MAX && i < cover.len() && cover[i].1 == u128::MAX) {
+            out.push((cur, b));
+        }
+    }
+    out
+}
+
+pub fn parse_provider_map(body: &[u8]) -> (Vec<(u32, u32, String)>, Vec<(u128, u128, String)>) {
+    let text = String::from_utf8_lossy(body);
+    let mut dict: HashMap<u32, String> = HashMap::new();
+    let mut v4 = Vec::new();
+    let mut v6 = Vec::new();
+    let mut section: u8 = 0;
+    for line in text.lines() {
+        let l = line.trim();
+        if l.is_empty() { continue; }
+        if l == "#dict" { section = 1; continue; }
+        if l == "#data" { section = 2; continue; }
+        if l.starts_with('#') { continue; }
+        let mut parts = l.splitn(2, '\t');
+        let a = match parts.next() { Some(x) => x, None => continue };
+        let b = match parts.next() { Some(x) => x, None => continue };
+        if section == 1 {
+            if let Ok(idx) = a.parse::<u32>() {
+                dict.insert(idx, b.to_string());
+            }
+        } else if section == 2 {
+            let idx: u32 = match b.trim().parse() { Ok(x) => x, Err(_) => continue };
+            let name = match dict.get(&idx) { Some(s) => s.clone(), None => continue };
+            let (ip_str, span) = match a.split_once('+') {
+                Some((ip, sp)) => (ip, sp.parse::<u128>().unwrap_or(0)),
+                None => (a, 0u128),
+            };
+            let ip: IpAddr = match ip_str.parse() { Ok(x) => x, Err(_) => continue };
+            match ip {
+                IpAddr::V4(x) => {
+                    let s = u32::from(x);
+                    let e = s.saturating_add(span as u32);
+                    v4.push((s, e, name));
+                }
+                IpAddr::V6(x) => {
+                    let s = u128::from(x);
+                    let e = s.saturating_add(span);
+                    v6.push((s, e, name));
+                }
+            }
+        }
+    }
+    v4.sort_by_key(|r| r.0);
+    v6.sort_by_key(|r| r.0);
+    (v4, v6)
+}
+
+fn split_v4(ranges: &[(u32, u32)], map: &[(u32, u32, String)])
+    -> HashMap<String, Vec<(u32, u32)>>
+{
+    let mut g: HashMap<String, Vec<(u32, u32)>> = HashMap::new();
+    for &(a, b) in ranges {
+        let mut cur = a;
+        let mut i = map.partition_point(|m| m.1 < cur);
+        while i < map.len() && map[i].0 <= b {
+            if map[i].0 > cur {
+                g.entry(String::new()).or_default().push((cur, map[i].0 - 1));
+                cur = map[i].0;
+            }
+            let end = map[i].1.min(b);
+            g.entry(map[i].2.clone()).or_default().push((cur, end));
+            if end == u32::MAX || end >= b { cur = u32::MAX; break; }
+            cur = end + 1;
+            i += 1;
+        }
+        if cur <= b { g.entry(String::new()).or_default().push((cur, b)); }
+    }
+    g
+}
+
+fn split_v6(ranges: &[(u128, u128)], map: &[(u128, u128, String)])
+    -> HashMap<String, Vec<(u128, u128)>>
+{
+    let mut g: HashMap<String, Vec<(u128, u128)>> = HashMap::new();
+    for &(a, b) in ranges {
+        let mut cur = a;
+        let mut i = map.partition_point(|m| m.1 < cur);
+        while i < map.len() && map[i].0 <= b {
+            if map[i].0 > cur {
+                g.entry(String::new()).or_default().push((cur, map[i].0 - 1));
+                cur = map[i].0;
+            }
+            let end = map[i].1.min(b);
+            g.entry(map[i].2.clone()).or_default().push((cur, end));
+            if end == u128::MAX || end >= b { cur = u128::MAX; break; }
+            cur = end + 1;
+            i += 1;
+        }
+        if cur <= b { g.entry(String::new()).or_default().push((cur, b)); }
+    }
+    g
+}
+
+fn group_by_provider(
+    spec: &FeedSpec, flags: u32,
+    v4: &[(u32, u32)], v6: &[(u128, u128)],
+    map4: &[(u32, u32, String)], map6: &[(u128, u128, String)],
+) -> Vec<FeedResult> {
+    let g4 = split_v4(v4, map4);
+    let g6 = split_v6(v6, map6);
+    let mut groups: HashMap<String, (Vec<(u32, u32)>, Vec<(u128, u128)>)> = HashMap::new();
+    for (p, r) in g4 { groups.entry(p).or_default().0 = r; }
+    for (p, r) in g6 { groups.entry(p).or_default().1 = r; }
+    let mut out = Vec::new();
+    for (p, (v4, v6)) in groups {
+        if v4.is_empty() && v6.is_empty() { continue; }
+        out.push(FeedResult {
+            name: spec.name.clone(),
+            provider: if p.is_empty() { None } else { Some(p) },
+            flags, v4, v6,
+        });
+    }
+    out
+}
+
 fn collect_ranges(tokens: &[String]) -> (Vec<(u32, u32)>, Vec<(u128, u128)>) {
     let mut v4 = Vec::new();
     let mut v6 = Vec::new();
@@ -178,7 +373,11 @@ fn provider_for(spec: &FeedSpec, asn: u32) -> String {
     crate::asn_db::lookup_org(asn).unwrap_or_default()
 }
 
-pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult>> {
+pub fn run_feed(
+    spec: &FeedSpec,
+    flag_names: &[String],
+    coverage: Option<&Coverage>,
+) -> Result<Vec<FeedResult>> {
     let flags = flag_mask(&spec.flags, flag_names);
 
     let tokens = if spec.is_asn && !spec.asns.is_empty() {
@@ -195,9 +394,23 @@ pub fn run_feed(spec: &FeedSpec, flag_names: &[String]) -> Result<Vec<FeedResult
     }
 
     if !spec.is_asn {
-        let (v4, v6) = collect_ranges(&tokens);
+        let (mut v4, mut v6) = collect_ranges(&tokens);
         if v4.is_empty() && v6.is_empty() {
             return Err(format!("{}: 0 IPs after parsing", spec.name).into());
+        }
+        if spec.only_unique {
+            let cov = coverage.ok_or_else(||
+                format!("{}: only_unique requires coverage", spec.name))?;
+            v4 = subtract_v4(&merge_v4(v4), &cov.v4);
+            v6 = subtract_v6(&merge_v6(v6), &cov.v6);
+            if v4.is_empty() && v6.is_empty() {
+                return Err(format!("{}: 0 IPs after uniqueness filter", spec.name).into());
+            }
+        }
+        if let Some(map_url) = &spec.provider_map_url {
+            let body = http_get(map_url)?;
+            let (map4, map6) = parse_provider_map(&body);
+            return Ok(group_by_provider(spec, flags, &v4, &v6, &map4, &map6));
         }
         return Ok(vec![FeedResult {
             name: spec.name.clone(),
@@ -244,28 +457,56 @@ pub fn build_db(feeds_file: &Path, out: &Path, verbose: bool) -> Result<()> {
         crate::asn_db::init()?;
     }
 
-    let queue: Mutex<Vec<(usize, FeedSpec)>> =
-        Mutex::new(ff.feeds.iter().cloned().enumerate().rev().collect());
-    let results: Mutex<Vec<Option<std::result::Result<Vec<FeedResult>, String>>>> =
-        Mutex::new((0..ff.feeds.len()).map(|_| None).collect());
+    let normal: Vec<(usize, FeedSpec)> = ff.feeds.iter().cloned().enumerate()
+        .filter(|(_, f)| !f.only_unique).collect();
+    let unique: Vec<(usize, FeedSpec)> = ff.feeds.iter().cloned().enumerate()
+        .filter(|(_, f)| f.only_unique).collect();
 
-    std::thread::scope(|s| {
-        for _ in 0..WORKERS {
-            s.spawn(|| loop {
-                let item = queue.lock().unwrap().pop();
-                match item {
-                    Some((i, spec)) => {
-                        let r = run_feed(&spec, &flag_names)
-                            .map_err(|e| e.to_string());
-                        results.lock().unwrap()[i] = Some(r);
+    let run_batch = |batch: Vec<(usize, FeedSpec)>, cov: Option<&Coverage>|
+        -> Vec<(usize, std::result::Result<Vec<FeedResult>, String>)>
+    {
+        let queue: Mutex<Vec<(usize, FeedSpec)>> = Mutex::new(batch.into_iter().rev().collect());
+        let out: Mutex<Vec<(usize, std::result::Result<Vec<FeedResult>, String>)>> =
+            Mutex::new(Vec::new());
+        std::thread::scope(|s| {
+            for _ in 0..WORKERS {
+                s.spawn(|| loop {
+                    let item = queue.lock().unwrap().pop();
+                    match item {
+                        Some((i, spec)) => {
+                            let r = run_feed(&spec, &flag_names, cov)
+                                .map_err(|e| e.to_string());
+                            out.lock().unwrap().push((i, r));
+                        }
+                        None => break,
                     }
-                    None => break,
-                }
-            });
-        }
-    });
+                });
+            }
+        });
+        out.into_inner().unwrap()
+    };
 
-    let results = results.into_inner().unwrap();
+    let normal_results = run_batch(normal, None);
+
+    let mut cov_v4: Vec<(u32, u32)> = Vec::new();
+    let mut cov_v6: Vec<(u128, u128)> = Vec::new();
+    for (_, r) in &normal_results {
+        if let Ok(parts) = r {
+            for p in parts {
+                cov_v4.extend(&p.v4);
+                cov_v6.extend(&p.v6);
+            }
+        }
+    }
+    let coverage = Coverage { v4: merge_v4(cov_v4), v6: merge_v6(cov_v6) };
+
+    let unique_results = run_batch(unique, Some(&coverage));
+
+    let mut results: Vec<Option<std::result::Result<Vec<FeedResult>, String>>> =
+        (0..ff.feeds.len()).map(|_| None).collect();
+    for (i, r) in normal_results.into_iter().chain(unique_results.into_iter()) {
+        results[i] = Some(r);
+    }
     let mut failures = 0usize;
 
     let mut b = Builder::new();

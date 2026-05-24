@@ -1172,6 +1172,14 @@
       "url": "https://uptime.betterstack.com/ips.txt",
       "regex": "^([0-9a-fA-F:.]+)",
       "flags": ["bot"]
+    },
+    {
+      "name": "ip2x_proxies",
+      "url": "https://github.com/tn3w/IP2X/releases/latest/download/proxy_pub.netset",
+      "regex": "^([0-9a-fA-F:.]+(?:/\\d+)?)",
+      "flags": ["proxy", "anonymizer"],
+      "only_unique": true,
+      "provider_map_url": "https://github.com/tn3w/IP2X/releases/latest/download/provider.tsv"
     }
   ]
 }
