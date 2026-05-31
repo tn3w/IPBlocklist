@@ -1180,6 +1180,194 @@
       "flags": ["proxy", "anonymizer"],
       "only_unique": true,
       "provider_map_url": "https://github.com/tn3w/IP2X/releases/latest/download/provider.tsv"
+    },
+    {
+      "name": "salesforce",
+      "provider": "Salesforce",
+      "url": "https://ip-ranges.salesforce.com/ip-ranges.json",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "exoscale",
+      "provider": "Exoscale",
+      "url": "https://exoscale-prefixes.sos.exo.io/exoscale_geofeed",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "ntt_global",
+      "provider": "NTT Global",
+      "url": "https://raw.githubusercontent.com/nttgin/geofeeds/master/geofeeds.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "netflix_openconnect",
+      "provider": "Netflix Open Connect",
+      "url": "https://raw.githubusercontent.com/Netflix/nflx-geofeed/main/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cdn"]
+    },
+    {
+      "name": "clouvider",
+      "provider": "Clouvider",
+      "url": "https://clouvider.com/geoipfeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter", "cloud"]
+    },
+    {
+      "name": "civo",
+      "provider": "Civo",
+      "url": "https://raw.githubusercontent.com/civo/geofeed/master/civo-geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "cherryservers",
+      "provider": "CherryServers",
+      "url": "https://geofeed.cherryservers.com/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter", "cloud"]
+    },
+    {
+      "name": "prerender",
+      "provider": "Prerender",
+      "url": "https://ipranges.prerender.io/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["bot"]
+    },
+    {
+      "name": "hostinger_geofeed",
+      "provider": "Hostinger",
+      "url": "https://raw.githubusercontent.com/hostinger/geofeed/main/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter", "cloud"]
+    },
+    {
+      "name": "upcloud_geofeed",
+      "provider": "UpCloud",
+      "url": "https://upcloud.com/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter", "cloud"]
+    },
+    {
+      "name": "google_special_crawlers",
+      "provider": "Google",
+      "url": "https://developers.google.com/search/apis/ipranges/special-crawlers.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["crawler", "bot"]
+    },
+    {
+      "name": "google_publicdns",
+      "provider": "Google Public DNS",
+      "url": "https://www.gstatic.com/ipranges/publicdns.json",
+      "regex": "\"ipv[46]Prefix\":\\s*\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "zoom",
+      "provider": "Zoom",
+      "url": "https://assets.zoom.us/docs/ipranges/Zoom.txt",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "imperva",
+      "provider": "Imperva",
+      "url": "https://my.imperva.com/api/integration/v1/ips",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cdn", "cloud"]
+    },
+    {
+      "name": "datadog",
+      "provider": "Datadog",
+      "url": "https://ip-ranges.datadoghq.com/",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["bot", "cloud"]
+    },
+    {
+      "name": "okta",
+      "provider": "Okta",
+      "url": "https://s3.amazonaws.com/okta-ip-ranges/ip_ranges.json",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "equinix_metal",
+      "provider": "Equinix Metal",
+      "url": "https://geofeed.equinixmetal.com/",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter", "cloud"]
+    },
+    {
+      "name": "auth0",
+      "provider": "Auth0",
+      "url": "https://cdn.auth0.com/ip-ranges.json",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "volia",
+      "provider": "Volia",
+      "url": "https://raw.githubusercontent.com/datacenter-volia/ip-geofeed/master/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "cloudsingularity",
+      "provider": "CloudSingularity",
+      "url": "https://raw.githubusercontent.com/techfutures/geofeed/main/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "stackit",
+      "provider": "STACKIT",
+      "url": "https://raw.githubusercontent.com/SchwarzIT/geofeeds/main/geofeed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["cloud", "datacenter"]
+    },
+    {
+      "name": "jhassine_datacenters",
+      "url": "https://raw.githubusercontent.com/jhassine/server-ip-addresses/master/data/datacenters.csv",
+      "regex": "^\"([0-9a-fA-F:.]+/\\d+)\"",
+      "flags": ["datacenter"]
+    },
+    {
+      "name": "stripe_api",
+      "provider": "Stripe",
+      "url": "https://stripe.com/files/ips/ips_api.json",
+      "regex": "\"([0-9.]+)\"",
+      "flags": ["cloud", "bot"]
+    },
+    {
+      "name": "o365",
+      "provider": "Microsoft 365",
+      "url": "https://endpoints.office.com/endpoints/worldwide?clientrequestid=b10c5ed1-bad1-445f-b386-b919946339a7",
+      "regex": "\"([0-9a-fA-F:.]+/\\d{1,3})\"",
+      "flags": ["cloud"]
+    },
+    {
+      "name": "travis_ci",
+      "provider": "Travis CI",
+      "url": "https://dnsjson.com/nat.travisci.net/A.json",
+      "regex": "\"([0-9.]+)\"",
+      "flags": ["cloud", "bot"]
+    },
+    {
+      "name": "verizon",
+      "provider": "Verizon",
+      "url": "https://raw.githubusercontent.com/Verizon/verizon-geofeed/main/feed.csv",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["isp"]
+    },
+    {
+      "name": "tmobile_us",
+      "provider": "T-Mobile US",
+      "url": "https://raw.githubusercontent.com/tmobile/tmus-geofeed/main/tmus-geo-ip.txt",
+      "regex": "^([0-9a-fA-F:.]+/\\d+)",
+      "flags": ["mobile", "isp"]
     }
   ]
 }
