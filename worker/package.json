@@ -8,6 +8,7 @@
 		"lookup": "tsx scripts/lookup.ts",
 		"typecheck": "tsc --noEmit",
 		"format": "prettier --write .",
+		"upload": "wrangler kv key put --config ../wrangler.jsonc --binding INTEL --remote intel.bin --path ../intel.bin",
 		"deploy": "wrangler deploy --config ../wrangler.jsonc",
 		"dev": "wrangler dev --config ../wrangler.jsonc"
 	},

@@ -19,6 +19,7 @@ jobs:
     env:
       CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
       HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
@@ -41,5 +42,7 @@ jobs:
         if: env.HAS_CF == 'true'
         working-directory: worker
         run: |
+          sed -i "s/\"KV_NAMESPACE_ID\"/\"${KV_NAMESPACE_ID}\"/" ../wrangler.jsonc
           npm ci
+          npm run upload
           npm run deploy
