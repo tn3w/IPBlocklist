@@ -1,0 +1,10 @@
+{
+	"$schema": "worker/node_modules/wrangler/config-schema.json",
+	"name": "ipintel",
+	"main": "worker/src/worker.ts",
+	"compatibility_date": "2026-06-06",
+	"rules": [{ "type": "Data", "globs": ["**/*.bin"], "fallthrough": true }],
+	"observability": { "enabled": true },
+	"workers_dev": false,
+	"preview_urls": false
+}

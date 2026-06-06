@@ -1,0 +1,22 @@
+{
+	"name": "ipintel",
+	"version": "1.0.0",
+	"description": "IP threat-intel insight lookups on a Cloudflare Worker",
+	"license": "Apache-2.0",
+	"type": "module",
+	"scripts": {
+		"lookup": "tsx scripts/lookup.ts",
+		"typecheck": "tsc --noEmit",
+		"format": "prettier --write .",
+		"deploy": "wrangler deploy --config ../wrangler.jsonc",
+		"dev": "wrangler dev --config ../wrangler.jsonc"
+	},
+	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20260606.1",
+		"@types/node": "^25.9.2",
+		"prettier": "^3.8.3",
+		"tsx": "^4.22.4",
+		"typescript": "^6.0.3",
+		"wrangler": "^4.98.0"
+	}
+}
