@@ -131,6 +131,40 @@ Levels: `critical >=80`, `high >=60`, `medium >=35`, `low >=15`, else `minimal`.
 
 20k sample: Spearman 0.94, Pearson 0.83 vs top-flag severity.
 
+## Cloudflare Worker
+
+`worker/` is a TypeScript port of the reader. `intel.bin` is too large to bundle
+(20MB > 3MB limit), so it lives in Workers KV; the Worker reads it once per isolate
+on cold start, builds the DB in memory, then serves zero-subrequest lookups.
+
+```http
+GET /?ip=1.1.1.1     full insight JSON for 1.1.1.1
+GET /                insight for the caller (CF-Connecting-IP)
+```
+
+Same JSON as `lookup.py`. `?ip=` responses are edge-cached.
+
+Live instance: [`ipintel.tn3w.dev`](https://ipintel.tn3w.dev/).
+
+```bash
+curl https://ipintel.tn3w.dev/?ip=185.220.101.1
+# {"ip":"185.220.101.1","verdict":"critical","score":100,"top_provider":"Tor",...}
+```
+
+Deploy your own:
+
+```bash
+cd worker && npm install
+npx wrangler kv namespace create INTEL   # put the id in ../wrangler.jsonc
+npm run upload && npm run deploy          # upload intel.bin to KV, deploy
+```
+
+[`deploy-worker.yml`](.github/workflows/deploy-worker.yml) on `worker/**` push:
+fetches the latest released `intel.bin`, uploads it to KV, redeploys. `build.yml`
+also redeploys with each fresh build. Both need repo secrets
+`CLOUDFLARE_API_TOKEN` (Workers Scripts + Workers KV Storage: Edit),
+`CLOUDFLARE_ACCOUNT_ID`, and `KV_NAMESPACE_ID`; without them they no-op.
+
 # blocklist.netset
 
 Plain-text CIDR list with `#`-prefixed metadata header, emitted by
