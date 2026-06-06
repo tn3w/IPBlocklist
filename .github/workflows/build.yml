@@ -17,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    env:
+      HAS_CF: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -97,7 +99,7 @@ jobs:
               done
 
       - name: Setup Node
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: env.HAS_CF == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -105,7 +107,7 @@ jobs:
           cache-dependency-path: worker/package-lock.json
 
       - name: Deploy Worker
-        if: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+        if: env.HAS_CF == 'true'
         working-directory: worker
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
