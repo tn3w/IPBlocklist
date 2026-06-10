@@ -144,6 +144,11 @@ GET /                insight for the caller (CF-Connecting-IP)
 
 Same JSON as `lookup.py`. `?ip=` responses are edge-cached.
 
+Invalid input → `400 {"error":"invalid ip","ip":...}`. Private/reserved ranges
+(RFC 1918/4193, loopback, link-local, multicast, documentation, …) short-circuit
+the DB and return `found:false`, `score:0`, `verdict` = scope (e.g. `private`),
+since they carry no reputation.
+
 Live instance: [`ipintel.tn3w.dev`](https://ipintel.tn3w.dev/).
 
 ```bash

@@ -1,4 +1,5 @@
 import { IntelDb } from "./lib/intel"
+import { isValidIp } from "./lib/ip"
 
 type Env = { INTEL: KVNamespace; INTEL_KEY?: string }
 
@@ -25,8 +26,9 @@ export default {
 	async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
 		const url = new URL(request.url)
 		const queryIp = url.searchParams.get("ip")
-		const ip = queryIp || request.headers.get("CF-Connecting-IP") || ""
+		const ip = (queryIp || request.headers.get("CF-Connecting-IP") || "").trim()
 		if (!ip) return json({ error: "no ip" }, 400, "no-store")
+		if (!isValidIp(ip)) return json({ error: "invalid ip", ip }, 400, "no-store")
 
 		const intel = await getDb(env)
 		if (!queryIp) return json(intel.lookup(ip), 200, "private, max-age=3600")

@@ -1,4 +1,4 @@
-import { isV6, ipToInt } from "./ip"
+import { isV6, ipToInt, ipScope } from "./ip"
 
 export const FLAGS = [
 	"vpn",
@@ -283,6 +283,8 @@ export class IntelDb {
 	}
 
 	lookup(ip: string): Result {
+		const scope = ipScope(ip)
+		if (scope) return reservedResult(ip, scope)
 		const v6 = isV6(ip)
 		const value = ipToInt(ip)
 		const matches = v6 ? this.lookupV6(value) : this.lookupV4(Number(value))
@@ -332,6 +334,22 @@ export class IntelDb {
 			reasons: ranked.slice(0, 5).map(([flag]) => flag),
 			matches,
 		}
+	}
+}
+
+function reservedResult(ip: string, scope: string): Result {
+	return {
+		ip,
+		found: false,
+		verdict: scope,
+		score: 0,
+		detections: 0,
+		sources: 0,
+		top_provider: "",
+		providers: [],
+		flags: [],
+		reasons: [scope],
+		matches: [],
 	}
 }
 
