@@ -129,6 +129,10 @@ Score: `severity × (1 + log2(1/prevalence)/24)`, top + 15% of rest,
 multi-source boost `× (1 + 0.08·log2(sources+1))`, capped at 100.
 Levels: `critical >=80`, `high >=60`, `medium >=35`, `low >=15`, else `minimal`.
 
+`bgptools_*` feeds are whole-ASN → weak evidence. Per-match weight
+penalized `× 0.35` for vpn/threat flags, `× 0.6` otherwise. Per-source,
+so a specific-IP feed on the same address keeps full weight.
+
 20k sample: Spearman 0.94, Pearson 0.83 vs top-flag severity.
 
 ## Cloudflare Worker

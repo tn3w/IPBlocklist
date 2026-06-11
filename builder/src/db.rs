@@ -16,11 +16,26 @@ const SEV: [u8; 20] = [
     5,  0,  10, 40, 10, 15, 35, 0,  0,  0,
 ];
 
+const BGPTOOLS_THREAT_MASK: u32 = (1 << 0) | (1 << 1) | (1 << 2) | (1 << 3)
+    | (1 << 4) | (1 << 5) | (1 << 6) | (1 << 7) | (1 << 8) | (1 << 13) | (1 << 16);
+
 pub fn score_for_flags(flags: u32) -> u8 {
+    score_for_flags_src(flags, false)
+}
+
+pub fn score_for_flags_src(flags: u32, bgptools: bool) -> u8 {
     let mut max = 0u8;
     for i in 0..20 {
-        if flags & (1 << i) != 0 && SEV[i] > max {
-            max = SEV[i];
+        if flags & (1 << i) == 0 {
+            continue;
+        }
+        let mut sev = SEV[i] as f32;
+        if bgptools {
+            sev *= if (1 << i) & BGPTOOLS_THREAT_MASK != 0 { 0.35 } else { 0.6 };
+        }
+        let sev = sev as u8;
+        if sev > max {
+            max = sev;
         }
     }
     max
@@ -551,7 +566,7 @@ impl Db {
     pub fn v4_large_starts(&self) -> &[u32] { &self.v4_large_starts }
     pub fn v4_large_ends(&self) -> &[u32] { &self.v4_large_ends }
 
-    pub fn iter_v4<F: FnMut(u32, u32, u32)>(&self, mut f: F) {
+    pub fn iter_v4<F: FnMut(u32, u32, u32, bool)>(&self, mut f: F) {
         for b in 0..V4_BUCKETS {
             let s = self.v4_bucket_index[b] as usize;
             let e = self.v4_bucket_index[b + 1] as usize;
@@ -559,20 +574,23 @@ impl Db {
             for i in s..e {
                 let lo = self.v4_starts_lo[i];
                 let end_lo = lo.wrapping_add(self.v4_lens[i]);
-                let flags = self.val_flags(self.v4_vals[i] as u32);
-                f(prefix | lo as u32, prefix | end_lo as u32, flags);
+                let val = self.v4_vals[i] as u32;
+                f(prefix | lo as u32, prefix | end_lo as u32,
+                  self.val_flags(val), self.val_is_bgptools(val));
             }
         }
         for i in 0..self.v4_large_starts.len() {
-            let flags = self.val_flags(self.v4_large_vals[i] as u32);
-            f(self.v4_large_starts[i], self.v4_large_ends[i], flags);
+            let val = self.v4_large_vals[i] as u32;
+            f(self.v4_large_starts[i], self.v4_large_ends[i],
+              self.val_flags(val), self.val_is_bgptools(val));
         }
     }
 
-    pub fn iter_v6<F: FnMut(u128, u128, u32)>(&self, mut f: F) {
+    pub fn iter_v6<F: FnMut(u128, u128, u32, bool)>(&self, mut f: F) {
         for i in 0..self.v6_starts.len() {
-            let flags = self.val_flags(self.v6_vals[i] as u32);
-            f(self.v6_starts[i], self.v6_ends[i], flags);
+            let val = self.v6_vals[i] as u32;
+            f(self.v6_starts[i], self.v6_ends[i],
+              self.val_flags(val), self.val_is_bgptools(val));
         }
     }
 
@@ -580,6 +598,17 @@ impl Db {
     fn val_flags(&self, val_id: u32) -> u32 {
         let o = val_id as usize * 16;
         u32::from_le_bytes(self.values[o..o + 4].try_into().unwrap())
+    }
+
+    #[inline]
+    fn val_is_bgptools(&self, val_id: u32) -> bool {
+        let (_, _, src) = self.val_entry(val_id);
+        self.get_str(src).starts_with("bgptools")
+    }
+
+    #[inline]
+    fn val_score(&self, val_id: u32) -> u8 {
+        score_for_flags_src(self.val_flags(val_id), self.val_is_bgptools(val_id))
     }
 
     fn val_entry(&self, val_id: u32) -> (u32, u32, u32) {
@@ -601,9 +630,10 @@ impl Db {
 
     fn make_hit(&self, start: IpAddr, end: IpAddr, val_id: u32) -> Hit<'_> {
         let (flags, prov, src) = self.val_entry(val_id);
+        let bgptools = self.get_str(src).starts_with("bgptools");
         Hit {
             start, end, flags,
-            score: score_for_flags(flags),
+            score: score_for_flags_src(flags, bgptools),
             provider: self.get_str(prov),
             source: self.get_str(src),
         }
@@ -713,7 +743,41 @@ impl Db {
 
     #[inline]
     pub fn lookup_v4_score(&self, ip: u32) -> u8 {
-        score_for_flags(self.lookup_v4_flags(ip))
+        let mut max = 0u8;
+        let bucket = (ip >> 16) as usize;
+        let ip_lo = (ip & 0xFFFF) as u16;
+        let bs = self.v4_bucket_index[bucket] as usize;
+        let be = self.v4_bucket_index[bucket + 1] as usize;
+        if bs < be {
+            let starts = &self.v4_starts_lo[bs..be];
+            let lens = &self.v4_lens[bs..be];
+            let vals = &self.v4_vals[bs..be];
+            let mends = &self.v4_max_ends_lo[bs..be];
+            let i = partition_point_u16(starts, ip_lo);
+            let mut j = i;
+            while j > 0 {
+                j -= 1;
+                if mends[j] < ip_lo { break; }
+                let end_lo = starts[j].wrapping_add(lens[j]);
+                if end_lo >= ip_lo {
+                    let s = self.val_score(vals[j] as u32);
+                    if s > max { max = s; }
+                }
+            }
+        }
+        if !self.v4_large_starts.is_empty() {
+            let i = partition_point_u32(&self.v4_large_starts, ip);
+            let mut j = i;
+            while j > 0 {
+                j -= 1;
+                if self.v4_large_max_ends[j] < ip { break; }
+                if self.v4_large_ends[j] >= ip {
+                    let s = self.val_score(self.v4_large_vals[j] as u32);
+                    if s > max { max = s; }
+                }
+            }
+        }
+        max
     }
 
     #[inline]
@@ -733,7 +797,18 @@ impl Db {
 
     #[inline]
     pub fn lookup_v6_score(&self, ip: u128) -> u8 {
-        score_for_flags(self.lookup_v6_flags(ip))
+        let mut max = 0u8;
+        let i = partition_point_u128(&self.v6_starts, ip);
+        let mut j = i;
+        while j > 0 {
+            j -= 1;
+            if self.v6_max_ends[j] < ip { break; }
+            if self.v6_ends[j] >= ip {
+                let s = self.val_score(self.v6_vals[j] as u32);
+                if s > max { max = s; }
+            }
+        }
+        max
     }
 }
 

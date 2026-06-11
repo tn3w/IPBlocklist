@@ -33,6 +33,23 @@ const LEVELS: [number, string][] = [
 	[15, "low"],
 ]
 
+const BGPTOOLS_THREAT = new Set([
+	"vpn",
+	"proxy",
+	"tor",
+	"anonymizer",
+	"malware",
+	"c2",
+	"scanner",
+	"brute_force",
+	"spammer",
+	"compromised",
+	"bot",
+])
+
+const bgptoolsPenalty = (source: string, flag: string) =>
+	!source.startsWith("bgptools") ? 1 : BGPTOOLS_THREAT.has(flag) ? 0.35 : 0.6
+
 const V4_BUCKETS = 65536
 
 export type Match = {
@@ -209,16 +226,18 @@ export class IntelDb {
 
 	private render(start: bigint, end: bigint, valueId: number, v6: boolean): Match {
 		const bits = this.valueTable[valueId * 4]
+		const source = this.strings[this.valueTable[valueId * 4 + 2]]
 		const flags: string[] = []
 		let weight = 0
 		for (let i = 0; i < 20; i++) {
 			if (!(bits & (1 << i))) continue
 			flags.push(FLAGS[i])
-			if (this.weights[i] > weight) weight = this.weights[i]
+			const w = this.weights[i] * bgptoolsPenalty(source, FLAGS[i])
+			if (w > weight) weight = w
 		}
 		const fmt = v6 ? formatV6 : formatV4
 		return {
-			source: this.strings[this.valueTable[valueId * 4 + 2]],
+			source,
 			provider: this.strings[this.valueTable[valueId * 4 + 1]],
 			range: `${fmt(start)}-${fmt(end)}`,
 			flags,
@@ -296,7 +315,8 @@ export class IntelDb {
 		const flagWeight = new Map<string, number>()
 		for (const match of matches)
 			for (const flag of match.flags) {
-				const weight = this.weights[FLAGS.indexOf(flag as (typeof FLAGS)[number])]
+				const base = this.weights[FLAGS.indexOf(flag as (typeof FLAGS)[number])]
+				const weight = base * bgptoolsPenalty(match.source, flag)
 				if (weight > (flagWeight.get(flag) ?? 0)) flagWeight.set(flag, weight)
 			}
 		const ranked = [...flagWeight.entries()].sort((a, b) => b[1] - a[1])

@@ -1,4 +1,4 @@
-use crate::db::{score_for_flags, Db, Result};
+use crate::db::{score_for_flags_src, Db, Result};
 use std::fs::File;
 use std::io::{BufWriter, Write};
 use std::net::{Ipv4Addr, Ipv6Addr};
@@ -30,8 +30,8 @@ pub enum Format { Range, Cidr }
 
 pub fn build(db: &Db, out: &Path, threshold: u8, fmt: Format) -> Result<Stats> {
     let mut v4: Vec<(u32, u32)> = Vec::new();
-    db.iter_v4(|s, e, flags| {
-        if score_for_flags(flags) >= threshold {
+    db.iter_v4(|s, e, flags, bgptools| {
+        if score_for_flags_src(flags, bgptools) >= threshold {
             v4.push((s, e));
         }
     });
@@ -39,8 +39,8 @@ pub fn build(db: &Db, out: &Path, threshold: u8, fmt: Format) -> Result<Stats> {
     let v4 = merge_u32(v4);
 
     let mut v6: Vec<(u128, u128)> = Vec::new();
-    db.iter_v6(|s, e, flags| {
-        if score_for_flags(flags) >= threshold {
+    db.iter_v6(|s, e, flags, bgptools| {
+        if score_for_flags_src(flags, bgptools) >= threshold {
             v6.push((s, e));
         }
     });
@@ -207,13 +207,13 @@ fn range_to_cidrs_u128(mut s: u128, e: u128) -> Vec<(u128, u8)> {
 pub fn analyze(db: &Db) -> Vec<(u8, u64, u64)> {
     let mut ranges = [0u64; 101];
     let mut ips = [0u64; 101];
-    db.iter_v4(|s, e, flags| {
-        let sc = score_for_flags(flags) as usize;
+    db.iter_v4(|s, e, flags, bgptools| {
+        let sc = score_for_flags_src(flags, bgptools) as usize;
         ranges[sc] += 1;
         ips[sc] += (e - s) as u64 + 1;
     });
-    db.iter_v6(|_, _, flags| {
-        let sc = score_for_flags(flags) as usize;
+    db.iter_v6(|_, _, flags, bgptools| {
+        let sc = score_for_flags_src(flags, bgptools) as usize;
         ranges[sc] += 1;
     });
     let mut out = Vec::new();

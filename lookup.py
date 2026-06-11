@@ -24,6 +24,17 @@ SEVERITY = {
     "anycast": 0, "mobile": 0, "isp": 0, "government": 0,
 }
 
+BGPTOOLS_THREAT_FLAGS = {
+    "vpn", "proxy", "tor", "anonymizer", "malware", "c2", "scanner",
+    "brute_force", "spammer", "compromised", "bot",
+}
+
+
+def bgptools_penalty(source, flag):
+    if not source.startswith("bgptools"):
+        return 1.0
+    return 0.35 if flag in BGPTOOLS_THREAT_FLAGS else 0.6
+
 HEADER = (
     "version", "_r0",
     "cn", "ln", "v6n", "valn", "strn",
@@ -219,9 +230,13 @@ class IntelDb:
         bits, provider_id, source_id, _ = self.values[val_id]
         bits = int(bits)
         flags = [n for i, n in enumerate(FLAGS) if bits & (1 << i)]
-        weight = max((self.weights[f] for f in flags), default=0)
+        source = self.strings[int(source_id)]
+        weight = max(
+            (self.weights[f] * bgptools_penalty(source, f) for f in flags),
+            default=0,
+        )
         return {
-            "source": self.strings[int(source_id)],
+            "source": source,
             "provider": self.strings[int(provider_id)],
             "range": f"{formatter(start)}-{formatter(end)}",
             "flags": flags,
@@ -243,7 +258,7 @@ class IntelDb:
         flag_value = {}
         for match in matches:
             for flag in match["flags"]:
-                value = self.weights[flag]
+                value = self.weights[flag] * bgptools_penalty(match["source"], flag)
                 if value > flag_value.get(flag, 0):
                     flag_value[flag] = value
         if not flag_value:
