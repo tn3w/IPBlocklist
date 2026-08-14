@@ -1,10 +1,12 @@
+use crate::brand::brand;
 use crate::db::Result;
+use flate2::read::GzDecoder;
 use std::collections::HashMap;
-use std::fs;
+use std::fs::File;
+use std::io::{BufRead, BufReader, Read};
+use std::net::IpAddr;
 use std::path::PathBuf;
 use std::sync::OnceLock;
-
-const MAGIC: u64 = 0x000442444E534144;
 
 struct Asndb {
     v4: HashMap<u32, Vec<(u32, u32)>>,
@@ -14,133 +16,132 @@ struct Asndb {
 
 static DB: OnceLock<Asndb> = OnceLock::new();
 
-fn db_path() -> PathBuf {
-    if let Some(p) = std::env::var_os("ASNDB_FILE") {
-        return PathBuf::from(p);
+fn source_path(variable: &str, name: &str) -> PathBuf {
+    if let Some(path) = std::env::var_os(variable) {
+        return PathBuf::from(path);
     }
-    for c in ["asndb-mini.bin", "../asndb-mini.bin"] {
-        let p = PathBuf::from(c);
-        if p.exists() { return p; }
-    }
-    PathBuf::from("asndb-mini.bin")
+    let parent = PathBuf::from("..").join(name);
+    if parent.exists() { parent } else { PathBuf::from(name) }
 }
 
-fn provider_path() -> PathBuf {
-    if let Some(p) = std::env::var_os("ASN_PROVIDER_FILE") {
-        return PathBuf::from(p);
-    }
-    for c in ["asn-provider.tsv", "../asn-provider.tsv"] {
-        let p = PathBuf::from(c);
-        if p.exists() { return p; }
-    }
-    PathBuf::from("asn-provider.tsv")
+fn reader(path: &PathBuf) -> Result<Box<dyn BufRead>> {
+    let file = File::open(path)
+        .map_err(|error| format!("ip2asn {}: {error}", path.display()))?;
+    let stream: Box<dyn Read> = match path.extension().is_some_and(|ext| ext == "gz") {
+        true => Box::new(GzDecoder::new(file)),
+        false => Box::new(file),
+    };
+    Ok(Box::new(BufReader::new(stream)))
 }
 
-fn u32_at(b: &[u8], o: usize) -> u32 {
-    u32::from_le_bytes(b[o..o + 4].try_into().unwrap())
+fn addresses(first: &str, last: &str) -> Option<(IpAddr, IpAddr)> {
+    Some((first.parse().ok()?, last.parse().ok()?))
 }
 
-fn u64_at(b: &[u8], o: usize) -> u64 {
-    u64::from_le_bytes(b[o..o + 8].try_into().unwrap())
-}
+/// RIPE `asn.txt` reads `<asn> <handle> - <company>, <CC>`, the dash often missing.
+fn ripe_names(path: &PathBuf) -> Result<(HashMap<u32, String>, HashMap<u32, String>)> {
+    let mut handles = HashMap::new();
+    let mut companies = HashMap::new();
 
-fn build_v4(bytes: &[u8], off: usize, count: usize) -> HashMap<u32, Vec<(u32, u32)>> {
-    let mut map: HashMap<u32, Vec<(u32, u32)>> = HashMap::new();
-    for i in 0..count {
-        let o = off + i * 8;
-        let start = u32_at(bytes, o);
-        let aidx = u32_at(bytes, o + 4);
-        if aidx == u32::MAX { continue; }
-        let end = if i + 1 < count {
-            u32_at(bytes, off + (i + 1) * 8).saturating_sub(1)
-        } else {
-            u32::MAX
+    for line in reader(path)?.lines() {
+        let line = line.map_err(|error| format!("asnames {}: {error}", path.display()))?;
+        let Some((asn, rest)) = line.split_once(' ') else { continue; };
+        let Ok(asn) = asn.parse::<u32>() else { continue; };
+
+        let name = match rest.rsplit_once(", ") {
+            Some((head, country)) if country.len() == 2 => head,
+            _ => rest,
         };
-        map.entry(aidx).or_default().push((start, end));
+        let Some(handle) = name.split_whitespace().next() else { continue; };
+
+        handles.insert(asn, handle.to_string());
+        companies.insert(asn, name.split_once(" - ").map_or(name, |(_, tail)| tail)
+            .to_string());
     }
-    map
+
+    Ok((handles, companies))
 }
 
-fn build_v6(bytes: &[u8], off: usize, count: usize) -> HashMap<u32, Vec<(u128, u128)>> {
-    let mut map: HashMap<u32, Vec<(u128, u128)>> = HashMap::new();
-    for i in 0..count {
-        let o = off + i * 20;
-        let start = u128::from_be_bytes(bytes[o..o + 16].try_into().unwrap());
-        let aidx = u32_at(bytes, o + 16);
-        if aidx == u32::MAX { continue; }
-        let end = if i + 1 < count {
-            let no = off + (i + 1) * 20;
-            u128::from_be_bytes(bytes[no..no + 16].try_into().unwrap()).saturating_sub(1)
-        } else {
-            u128::MAX
-        };
-        map.entry(aidx).or_default().push((start, end));
-    }
-    map
-}
+/// CAIDA joins `aut|…|org_id|…` rows to `org_id|…|org_name|…` rows by org id.
+fn caida_companies(path: &PathBuf) -> Result<HashMap<u32, String>> {
+    let mut organizations: HashMap<String, String> = HashMap::new();
+    let mut members: Vec<(u32, String)> = Vec::new();
 
-fn asn_index_map(bytes: &[u8], off: usize, count: usize) -> HashMap<u32, u32> {
-    let mut m = HashMap::with_capacity(count);
-    for i in 0..count {
-        let asn = u32_at(bytes, off + i * 8);
-        m.insert(asn, i as u32);
+    for line in reader(path)?.lines() {
+        let line = line.map_err(|error| format!("as-org2info {error}"))?;
+        if line.starts_with('#') {
+            continue;
+        }
+
+        let fields: Vec<&str> = line.split('|').collect();
+        match fields.len() {
+            5 => { organizations.insert(fields[0].to_string(), fields[2].to_string()); }
+            6 => if let Ok(asn) = fields[0].parse::<u32>() {
+                members.push((asn, fields[3].to_string()));
+            },
+            _ => continue,
+        }
     }
-    m
+
+    Ok(members
+        .into_iter()
+        .filter_map(|(asn, org)| Some((asn, organizations.get(&org)?.clone())))
+        .filter(|(_, name)| !name.is_empty())
+        .collect())
 }
 
 fn load_names() -> Result<HashMap<u32, String>> {
-    let path = provider_path();
-    eprintln!("loading asn-provider: {}", path.display());
-    let text = fs::read_to_string(&path)
-        .map_err(|e| format!("asn-provider {}: {e}", path.display()))?;
-    let mut m = HashMap::new();
-    for line in text.lines() {
-        let Some((a, n)) = line.split_once('\t') else { continue; };
-        let Ok(asn) = a.trim().parse::<u32>() else { continue; };
-        let name = n.trim();
-        if !name.is_empty() {
-            m.insert(asn, name.to_string());
-        }
-    }
-    Ok(m)
+    let asnames = source_path("RIPE_ASNAMES_FILE", "asn.txt");
+    let asorg = source_path("CAIDA_ASORG_FILE", "as-org2info.txt.gz");
+    eprintln!("loading names: {} + {}", asnames.display(), asorg.display());
+
+    let (handles, mut companies) = ripe_names(&asnames)?;
+    companies.extend(caida_companies(&asorg)?);
+
+    let asns: Vec<u32> = handles.keys().chain(companies.keys()).copied().collect();
+    Ok(asns
+        .into_iter()
+        .map(|asn| {
+            let handle = handles.get(&asn).map_or("", String::as_str);
+            let company = companies.get(&asn).map_or("", String::as_str);
+            (asn, brand(handle, company))
+        })
+        .filter(|(_, name)| !name.is_empty())
+        .collect())
 }
 
 pub fn init() -> Result<()> {
-    let path = db_path();
-    eprintln!("loading asndb: {}", path.display());
-    let bytes = fs::read(&path)
-        .map_err(|e| format!("asndb {}: {e}", path.display()))?;
-    if bytes.len() < 104 {
-        return Err("asndb: file too small".into());
-    }
-    if u64_at(&bytes, 0) != MAGIC {
-        return Err("asndb: bad magic".into());
-    }
-    let flavor = bytes[8];
-    if flavor != 1 {
-        return Err(format!("asndb: expected mini flavor (1), got {flavor}").into());
-    }
-
-    let asn_count = u32_at(&bytes, 16) as usize;
-    let seg4_count = u32_at(&bytes, 20) as usize;
-    let seg6_count = u32_at(&bytes, 24) as usize;
-    let asn_off = u64_at(&bytes, 40) as usize;
-    let seg4_off = u64_at(&bytes, 48) as usize;
-    let seg6_off = u64_at(&bytes, 56) as usize;
-
-    let asn_to_idx = asn_index_map(&bytes, asn_off, asn_count);
-    let v4_by_idx = build_v4(&bytes, seg4_off, seg4_count);
-    let v6_by_idx = build_v6(&bytes, seg6_off, seg6_count);
+    let path = source_path("IP2ASN_FILE", "ip2asn-combined.tsv.gz");
+    eprintln!("loading ip2asn: {}", path.display());
 
     let mut v4: HashMap<u32, Vec<(u32, u32)>> = HashMap::new();
     let mut v6: HashMap<u32, Vec<(u128, u128)>> = HashMap::new();
-    for (asn, idx) in &asn_to_idx {
-        if let Some(p) = v4_by_idx.get(idx) { v4.insert(*asn, p.clone()); }
-        if let Some(p) = v6_by_idx.get(idx) { v6.insert(*asn, p.clone()); }
+
+    for line in reader(&path)?.lines() {
+        let line = line.map_err(|error| format!("ip2asn {}: {error}", path.display()))?;
+        let mut fields = line.split('\t');
+        let (Some(first), Some(last), Some(asn)) =
+            (fields.next(), fields.next(), fields.next()) else { continue; };
+
+        let Ok(asn) = asn.parse::<u32>() else { continue; };
+        if asn == 0 { continue; }
+
+        match addresses(first, last) {
+            Some((IpAddr::V4(start), IpAddr::V4(end))) => {
+                v4.entry(asn).or_default().push((start.into(), end.into()));
+            }
+            Some((IpAddr::V6(start), IpAddr::V6(end))) => {
+                v6.entry(asn).or_default().push((start.into(), end.into()));
+            }
+            _ => continue,
+        }
     }
 
-    let names = load_names()?;
-    let _ = DB.set(Asndb { v4, v6, names });
+    if v4.is_empty() && v6.is_empty() {
+        return Err(format!("ip2asn {}: no ranges parsed", path.display()).into());
+    }
+
+    let _ = DB.set(Asndb { v4, v6, names: load_names()? });
     Ok(())
 }
 
@@ -149,7 +150,7 @@ pub fn lookup_org(asn: u32) -> Option<String> {
 }
 
 pub fn prefixes_for(asn: u32) -> (Vec<(u32, u32)>, Vec<(u128, u128)>) {
-    let db = DB.get().expect("asndb not initialized");
+    let db = DB.get().expect("ip2asn not initialized");
     let v4 = db.v4.get(&asn).cloned().unwrap_or_default();
     let v6 = db.v6.get(&asn).cloned().unwrap_or_default();
     (v4, v6)

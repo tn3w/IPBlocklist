@@ -1,102 +1,40 @@
+import gzip
 import hashlib
 import ipaddress
 import json
-import mmap
 import os
 import re
 import ssl
-import struct
 import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-_ASNDB_MAGIC = 0x000442444E534144
-_ASNDB_NO_ASN = 0xFFFFFFFF
-_ASNDB_HDR = struct.Struct("<Q B 7x 6I 8Q")
-_ASNDB_U32 = struct.Struct("<I")
 
-
-class AsnDb:
+class Ip2Asn:
     def __init__(self, path):
-        f = open(path, "rb")
-        self.mm = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
-        h = _ASNDB_HDR.unpack_from(self.mm, 0)
-        if h[0] != _ASNDB_MAGIC:
-            raise ValueError("asndb: bad magic")
-        if h[1] != 1:
-            raise ValueError(f"asndb: expected mini flavor, got {h[1]}")
-        self._asn_count = h[2]
-        self._seg4_count = h[3]
-        self._seg6_count = h[4]
-        self._asn_off = h[8]
-        self._seg4_off = h[9]
-        self._seg6_off = h[10]
-        self._seg_cache = None
+        self.prefixes = {}
+        opener = gzip.open if str(path).endswith(".gz") else open
+        with opener(path, "rt", encoding="utf-8", errors="replace") as file:
+            for line in file:
+                fields = line.rstrip("\n").split("\t")
+                if len(fields) < 3 or not fields[2].isdigit():
+                    continue
 
-    def _asn_at(self, i):
-        return _ASNDB_U32.unpack_from(self.mm, self._asn_off + i * 8)[0]
+                asn = int(fields[2])
+                if asn == 0:
+                    continue
 
-    def _asn_idx(self, asn):
-        lo, hi = 0, self._asn_count
-        while lo < hi:
-            m = (lo + hi) >> 1
-            if self._asn_at(m) < asn:
-                lo = m + 1
-            else:
-                hi = m
-        if lo < self._asn_count and self._asn_at(lo) == asn:
-            return lo
-        return None
-
-    def _seg_index(self):
-        if self._seg_cache is not None:
-            return self._seg_cache
-        v4, v6 = {}, {}
-        for i in range(self._seg4_count):
-            o = self._seg4_off + i * 8
-            start, aidx = struct.unpack_from("<II", self.mm, o)
-            if aidx == _ASNDB_NO_ASN:
-                continue
-            if i + 1 < self._seg4_count:
-                end = _ASNDB_U32.unpack_from(
-                    self.mm, self._seg4_off + (i + 1) * 8
-                )[0] - 1
-            else:
-                end = 0xFFFFFFFF
-            v4.setdefault(aidx, []).append((start, end))
-        for i in range(self._seg6_count):
-            o = self._seg6_off + i * 20
-            start = int.from_bytes(self.mm[o:o + 16], "big")
-            aidx = _ASNDB_U32.unpack_from(self.mm, o + 16)[0]
-            if aidx == _ASNDB_NO_ASN:
-                continue
-            if i + 1 < self._seg6_count:
-                no = self._seg6_off + (i + 1) * 20
-                end = int.from_bytes(self.mm[no:no + 16], "big") - 1
-            else:
-                end = (1 << 128) - 1
-            v6.setdefault(aidx, []).append((start, end))
-        self._seg_cache = (v4, v6)
-        return self._seg_cache
+                self.prefixes.setdefault(asn, []).append((fields[0], fields[1]))
 
     def prefixes_cidr(self, asn):
-        i = self._asn_idx(asn)
-        if i is None:
-            return []
-        v4_map, v6_map = self._seg_index()
-        out = []
-        for start, end in v4_map.get(i, []):
-            for net in ipaddress.summarize_address_range(
-                ipaddress.IPv4Address(start), ipaddress.IPv4Address(end)
-            ):
-                out.append(str(net))
-        for start, end in v6_map.get(i, []):
-            for net in ipaddress.summarize_address_range(
-                ipaddress.IPv6Address(start), ipaddress.IPv6Address(end)
-            ):
-                out.append(str(net))
-        return out
+        return [
+            str(network)
+            for first, last in self.prefixes.get(asn, [])
+            for network in ipaddress.summarize_address_range(
+                ipaddress.ip_address(first), ipaddress.ip_address(last)
+            )
+        ]
 
 _REQUEST_CACHE_DIR = "request_cache"
 _USER_AGENT = (
@@ -129,18 +67,18 @@ def cached_request(url, timeout=30):
     os.replace(temp, path)
     return data
 
-_asndb = None
-_asndb_lock = threading.Lock()
+_ip2asn = None
+_ip2asn_lock = threading.Lock()
 
 
-def asndb():
-    global _asndb
-    with _asndb_lock:
-        if _asndb is None:
-            path = os.environ.get("ASNDB_FILE", "asndb-mini.bin")
-            _asndb = AsnDb(path)
-            print(f"Loaded ASNDB from {path}")
-        return _asndb
+def ip2asn():
+    global _ip2asn
+    with _ip2asn_lock:
+        if _ip2asn is None:
+            path = os.environ.get("IP2ASN_FILE", "ip2asn-combined.tsv.gz")
+            _ip2asn = Ip2Asn(path)
+            print(f"Loaded ip2asn from {path}")
+        return _ip2asn
 
 
 def parse_ip(ip_str):
@@ -227,7 +165,7 @@ def lookup_asn_prefixes(asn):
     asn_num = normalize_asn(asn)
     if asn_num is None:
         return []
-    return asndb().prefixes_cidr(int(asn_num))
+    return ip2asn().prefixes_cidr(int(asn_num))
 
 
 def extract_normalized_asns(source):

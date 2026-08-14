@@ -1,5 +1,21 @@
 # IPBlocklist
 
+> [!WARNING]
+> **Discontinued.** Use [plevin](https://pypi.org/project/plevin/) instead:
+> 11 MB for abuse + network, ~0.5 µs per lookup, more feeds, and a named verdict
+> with evidence instead of a bare 0-100 score. `pip install plevin[network]`
+>
+> ```python
+> >>> plevin.lookup("2.58.241.67").abuse      # ProtonVPN exit
+> Abuse(name='ProtonVPN', service='anonymous_vpn', evidence='published',
+>       is_anonymous_vpn=True, is_anonymous=True, ...)
+> >>> plevin.lookup("171.25.193.25").abuse    # Tor exit
+> Abuse(name='Tor', service='tor_exit_node', evidence='measured', risk=0.93,
+>       last_seen_days=1, is_tor_exit_node=True, ...)
+> >>> plevin.lookup("1.212.225.99").abuse     # brute-force source
+> Abuse(name=None, service=None, risk=0.98, last_seen_days=1, ...)
+> ```
+
 [![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/build.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
 [![Intel sources](https://img.shields.io/badge/intel.bin-192_sources-blue)](feeds-intel.json)
 [![License](https://img.shields.io/badge/license-Apache_2.0-lightgrey)](LICENSE)
@@ -11,8 +27,6 @@ Consumer-side 0-100 scoring.
 wget https://github.com/tn3w/IPBlocklist/releases/latest/download/intel.bin
 wget https://github.com/tn3w/IPBlocklist/releases/latest/download/blocklist.netset
 ```
-
-Demo: [ipblocklist.tn3w.dev](https://ipblocklist.tn3w.dev).
 
 ## Artifacts
 
@@ -80,8 +94,11 @@ FEEDS_FILE=../feeds-intel.json OUT_FILE=../intel.bin \
 
 Produces: `builder` CLI, `libipintel.so`/`.a`, `include/ipintel.h`.
 
-ASN resolved offline from `asndb-mini.bin` (`ASNDB_FILE` env). HTTP cache:
-`request_cache/`.
+ASN prefixes resolved offline from [iptoasn.com](https://iptoasn.com)
+`ip2asn-combined.tsv.gz` (`IP2ASN_FILE` env). Provider names are derived from the
+RIPE `asn.txt` handle (`RIPE_ASNAMES_FILE`) plus the CAIDA `as-org2info.txt.gz`
+company (`CAIDA_ASORG_FILE`), stripped of legal forms and shared words. HTTP
+cache: `request_cache/`.
 
 ## C ABI
 
