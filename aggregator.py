@@ -5,6 +5,7 @@ import json
 import os
 import re
 import ssl
+import struct
 import threading
 import time
 import urllib.request
