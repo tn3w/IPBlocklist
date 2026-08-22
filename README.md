@@ -1,19 +1,17 @@
 # IPBlocklist
 
 > [!WARNING]
-> **Discontinued.** Use [plevin](https://pypi.org/project/plevin/) instead:
-> 11 MB for abuse + network, ~0.5 µs per lookup, more feeds, and a named verdict
-> with evidence instead of a bare 0-100 score. `pip install plevin[network]`
+> **Retired.** Use [plevin](https://pypi.org/project/plevin/) instead:
+> the 2.8 MB abuse database gives the same kind of verdicts in a smaller file.
+> `pip install plevin[abuse]`
 >
 > ```python
 > >>> plevin.lookup("2.58.241.67").abuse      # ProtonVPN exit
-> Abuse(name='ProtonVPN', service='anonymous_vpn', evidence='published',
+> Abuse(name='ProtonVPN', service='anonymous_vpn'
 >       is_anonymous_vpn=True, is_anonymous=True, ...)
 > >>> plevin.lookup("171.25.193.25").abuse    # Tor exit
-> Abuse(name='Tor', service='tor_exit_node', evidence='measured', risk=0.93,
->       last_seen_days=1, is_tor_exit_node=True, ...)
-> >>> plevin.lookup("1.212.225.99").abuse     # brute-force source
-> Abuse(name=None, service=None, risk=0.98, last_seen_days=1, ...)
+> Abuse(provider='Tor', service='tor_exit_node'
+>       is_tor_exit_node=True, is_anonymous=True ...)
 > ```
 
 [![Build](https://img.shields.io/github/actions/workflow/status/tn3w/IPBlocklist/build.yml?label=build)](https://github.com/tn3w/IPBlocklist/actions)
