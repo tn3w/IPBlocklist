@@ -3,7 +3,7 @@
 > [!WARNING]
 > **Retired.** Use [plevin](https://pypi.org/project/plevin/) instead:
 > the 2.8 MB abuse database gives the same kind of verdicts in a smaller file.
-> `pip install plevin[abuse]`
+> `pip install plevin[abuse]`, feeds.json moved [here](https://github.com/tn3w/plevin/blob/master/builder/data/feeds.json)
 >
 > ```python
 > >>> plevin.lookup("2.58.241.67").abuse      # ProtonVPN exit
